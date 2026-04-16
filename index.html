@@ -373,6 +373,125 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
 
 
+
+/* ── TODAY VIEW ── */
+.today-grid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr 1fr;
+  gap:1rem;
+  margin-bottom:1.2rem;
+}
+@media(max-width:980px){
+  .today-grid{grid-template-columns:1fr;}
+}
+.today-panel{
+  background:var(--ch-m);
+  border:1px solid var(--ch-b);
+  border-radius:10px;
+  overflow:hidden;
+}
+.today-head{
+  padding:0.8rem 1rem;
+  background:var(--ch-s);
+  border-bottom:1px solid var(--ch-b);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.5rem;
+}
+.today-title{
+  font-size:0.62rem;
+  font-weight:700;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--gold-d);
+}
+.today-count{
+  font-family:'DM Mono',monospace;
+  font-size:0.72rem;
+  color:var(--gold);
+}
+.today-body{padding:0.4rem 0;}
+.today-item{
+  padding:0.8rem 1rem;
+  border-bottom:1px solid var(--ch-s);
+  display:flex;
+  align-items:flex-start;
+  gap:0.7rem;
+  cursor:pointer;
+  transition:background 0.15s;
+}
+.today-item:last-child{border-bottom:none;}
+.today-item:hover{background:rgba(201,168,76,0.03);}
+.today-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  flex-shrink:0;
+  margin-top:0.3rem;
+}
+.today-main{flex:1; min-width:0;}
+.today-name{
+  font-size:0.82rem;
+  font-weight:600;
+  color:var(--ow);
+  margin-bottom:0.15rem;
+}
+.today-sub{
+  font-size:0.73rem;
+  color:var(--tb);
+  line-height:1.45;
+}
+.today-meta{
+  font-size:0.66rem;
+  color:var(--wg);
+  font-family:'DM Mono',monospace;
+  margin-top:0.22rem;
+}
+.today-empty{
+  padding:1.4rem 1rem;
+  text-align:center;
+  font-size:0.78rem;
+  color:var(--wg);
+}
+.today-hero{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:0.8rem;
+  margin-bottom:1rem;
+}
+@media(max-width:760px){
+  .today-hero{grid-template-columns:repeat(2,1fr);}
+}
+.today-stat{
+  background:var(--ch-m);
+  border:1px solid var(--ch-b);
+  border-radius:10px;
+  padding:0.9rem 1rem;
+}
+.today-stat-label{
+  font-size:0.55rem;
+  font-weight:700;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--gold-d);
+  display:block;
+  margin-bottom:0.3rem;
+}
+.today-stat-value{
+  font-family:'Playfair Display',serif;
+  font-size:1.4rem;
+  font-weight:800;
+  color:var(--gold);
+  display:block;
+}
+.today-stat-sub{
+  font-size:0.68rem;
+  color:var(--wg);
+  margin-top:0.2rem;
+}
+
+
 /* ── LOADING ── */
 .loading-screen{position:fixed;inset:0;background:var(--ch);display:flex;align-items:center;justify-content:center;z-index:400;flex-direction:column;gap:0.8rem;}
 .loading-screen.hidden{display:none;}
@@ -546,6 +665,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
     <div class="sidebar-section">
       <div class="sidebar-label">Navigation</div>
       <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span> Dashboard</div>
+      <div class="nav-item" onclick="showView('today',this)"><span class="nav-icon">☀</span> Today <span class="nav-badge red" id="nav-today-badge" style="display:none">0</span></div>
       <div class="nav-item" onclick="showView('accounts',this)"><span class="nav-icon">◉</span> Accounts <span class="nav-badge" id="nav-accounts-badge">0</span></div>
       <div class="nav-item" onclick="showView('pipeline',this)"><span class="nav-icon">◧</span> Pipeline</div>
       <div class="nav-item" onclick="showView('followups',this)"><span class="nav-icon">◷</span> Follow-Ups <span class="nav-badge red" id="nav-followup-badge" style="display:none">0</span></div>
@@ -587,6 +707,36 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         </div>
       </div>
     </div>
+
+
+    <!-- TODAY -->
+    <div id="view-today" class="view">
+      <div class="view-header">
+        <div><div class="view-title">Today</div><div class="view-sub">The next actions that matter most</div></div>
+      </div>
+      <div class="view-content">
+        <div class="today-hero" id="today-hero"></div>
+        <div class="today-grid">
+          <div class="today-panel">
+            <div class="today-head"><span class="today-title">Due Today</span><span class="today-count" id="today-due-count">0</span></div>
+            <div class="today-body" id="today-due"></div>
+          </div>
+          <div class="today-panel">
+            <div class="today-head"><span class="today-title">Overdue</span><span class="today-count" id="today-overdue-count">0</span></div>
+            <div class="today-body" id="today-overdue"></div>
+          </div>
+          <div class="today-panel">
+            <div class="today-head"><span class="today-title">Hot Accounts</span><span class="today-count" id="today-hot-count">0</span></div>
+            <div class="today-body" id="today-hot"></div>
+          </div>
+        </div>
+        <div class="today-panel">
+          <div class="today-head"><span class="today-title">Upcoming Follow-Ups</span><span class="today-count" id="today-upcoming-count">0</span></div>
+          <div class="today-body" id="today-upcoming"></div>
+        </div>
+      </div>
+    </div>
+
 
     <!-- ACCOUNTS -->
     <div id="view-accounts" class="view">
@@ -1072,6 +1222,7 @@ function goBack() { closeSidebar(); showView('accounts', document.querySelectorA
 function renderAll() { updateSidebar(); renderView(currentView); }
 function renderView(name) {
   if (name==='dashboard') renderDashboard();
+  else if (name==='today') renderToday();
   else if (name==='accounts') renderAccounts();
   else if (name==='pipeline') renderPipeline();
   else if (name==='followups') renderFollowUps();
@@ -1086,6 +1237,8 @@ function updateSidebar() {
   const urg = accounts.filter(a=>a.followUp&&dayDiff(a.followUp)<=0).length;
   const fb = document.getElementById('nav-followup-badge');
   if (urg>0){fb.textContent=urg;fb.style.display='';}else{fb.style.display='none';}
+  const tb = document.getElementById('nav-today-badge');
+  if (urg>0){tb.textContent=urg;tb.style.display='';}else{tb.style.display='none';}
 
   let html='';
   STAGES.forEach(s=>{
@@ -1144,6 +1297,78 @@ function renderDashboard() {
       <span class="pb-num">${c}</span></div>`;
   }).join('');
   setTimeout(()=>STAGES.forEach(s=>{ const el=document.getElementById('pbf-'+s.key); if(el){const c=accounts.filter(a=>a.stage===s.key).length;el.style.width=Math.round(c/(accounts.length||1)*100)+'%';}}),50);
+}
+
+
+// ════════════════════════════════════════════════════════════
+// TODAY VIEW
+// ════════════════════════════════════════════════════════════
+function renderToday() {
+  const dueToday = accounts.filter(a => a.followUp && dayDiff(a.followUp) === 0)
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  const overdue = accounts.filter(a => a.followUp && dayDiff(a.followUp) < 0)
+    .sort((a,b)=>dayDiff(a.followUp)-dayDiff(b.followUp));
+  const upcoming = accounts.filter(a => a.followUp && dayDiff(a.followUp) > 0)
+    .sort((a,b)=>a.followUp.localeCompare(b.followUp));
+  const hot = accounts
+    .filter(a => ['demo','proposal'].includes(a.stage))
+    .sort((a,b)=>calcMRR(b)-calcMRR(a))
+    .slice(0,6);
+
+  const activeAccounts = accounts.filter(a => !['won','lost'].includes(a.stage)).length;
+  const pipelineMRR = accounts.filter(a => a.stage !== 'lost').reduce((s,a)=>s+calcMRR(a),0);
+  const wonMRR = accounts.filter(a => a.stage === 'won').reduce((s,a)=>s+calcMRR(a),0);
+
+  document.getElementById('today-hero').innerHTML = `
+    <div class="today-stat"><span class="today-stat-label">Due Today</span><span class="today-stat-value">${dueToday.length}</span><div class="today-stat-sub">Touches that need action now</div></div>
+    <div class="today-stat"><span class="today-stat-label">Overdue</span><span class="today-stat-value" style="color:${overdue.length?'var(--red)':'var(--gold)'}">${overdue.length}</span><div class="today-stat-sub">Missed follow-ups</div></div>
+    <div class="today-stat"><span class="today-stat-label">Active Pipeline</span><span class="today-stat-value">${activeAccounts}</span><div class="today-stat-sub">${fmt(pipelineMRR)}/mo in motion</div></div>
+    <div class="today-stat"><span class="today-stat-label">Won MRR</span><span class="today-stat-value" style="color:var(--green)">${fmt(wonMRR)}</span><div class="today-stat-sub">${fmt(wonMRR*12)}/yr closed</div></div>
+  `;
+
+  document.getElementById('today-due-count').textContent = dueToday.length;
+  document.getElementById('today-overdue-count').textContent = overdue.length;
+  document.getElementById('today-hot-count').textContent = hot.length;
+  document.getElementById('today-upcoming-count').textContent = upcoming.length;
+
+  document.getElementById('today-due').innerHTML = renderTodayList(
+    dueToday,
+    a => ({ dot:'var(--amber)', sub:`${a.regionLabel} · ${stageInfo(a.stage).label} · ${fmt(calcMRR(a))}/mo`, meta:'Due today' }),
+    'Nothing due today.'
+  );
+
+  document.getElementById('today-overdue').innerHTML = renderTodayList(
+    overdue,
+    a => ({ dot:'var(--red)', sub:`${a.regionLabel} · ${stageInfo(a.stage).label} · ${fmt(calcMRR(a))}/mo`, meta:`${Math.abs(dayDiff(a.followUp))}d overdue` }),
+    'No overdue follow-ups.'
+  );
+
+  document.getElementById('today-hot').innerHTML = renderTodayList(
+    hot,
+    a => ({ dot:'var(--green)', sub:`${a.regionLabel} · ${stageInfo(a.stage).label} · ${fmt(calcMRR(a))}/mo`, meta:a.followUp ? `Next: ${fuLabel(a.followUp)}` : 'No follow-up set' }),
+    'No hot accounts yet.'
+  );
+
+  document.getElementById('today-upcoming').innerHTML = renderTodayList(
+    upcoming.slice(0,10),
+    a => ({ dot:'var(--gold)', sub:`${a.regionLabel} · ${stageInfo(a.stage).label} · ${fmt(calcMRR(a))}/mo`, meta:fuLabel(a.followUp) }),
+    'No upcoming follow-ups.'
+  );
+}
+
+function renderTodayList(items, mapFn, emptyText) {
+  if (!items.length) return `<div class="today-empty">${emptyText}</div>`;
+  return items.map(a => {
+    const info = mapFn(a);
+    return `<div class="today-item" onclick="goToAccount('${a.id}')">
+      <div class="today-dot" style="background:${info.dot}"></div>
+      <div class="today-main">
+        <div class="today-name">${a.name}</div>
+        <div class="today-sub">${info.sub}</div>
+        <div class="today-meta">${info.meta}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════════
