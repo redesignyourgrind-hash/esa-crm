@@ -357,11 +357,13 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <div id="auth-screen" class="auth-screen hidden">
   <div class="auth-card">
     <div class="auth-logo">ESA <span>CRM</span></div>
-    <div class="auth-sub">Enter your email and we'll send you a sign-in link.</div>
-    <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')doSignIn()">
+    <div class="auth-sub">Sign in to access your pipeline</div>
+    <input class="auth-input" id="auth-email" onkeydown="handleAuthKey(event)" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')doSignIn()">
+    <input class="auth-input" id="auth-password" onkeydown="handleAuthKey(event)" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doSignIn()">
     <div class="auth-err" id="auth-err"></div>
     <button class="auth-btn" onclick="doSignIn()">Sign In</button>
-    <button class="auth-btn" onclick="doSignIn()">Send Magic Link</button>
+<button class="auth-btn" style="margin-top:0.55rem;background:transparent;border:1px solid var(--gold-d);color:var(--gold);" onclick="sendMagicLink()">Send Magic Link</button>
+  </div>
 </div>
 
 <!-- TOPBAR -->
@@ -633,23 +635,34 @@ async function onSignedIn(user){
 
 async function doSignIn(){
   const email=document.getElementById('auth-email').value.trim();
-  const errEl=document.getElementById('auth-err');
-  errEl.textContent='';
-  errEl.style.color='var(--red)';
-  if(!email){errEl.textContent='Please enter your email address.';return;}
-  errEl.style.color='var(--wg)';
-  errEl.textContent='Sending link…';
+  const pw=document.getElementById('auth-password').value;
+  document.getElementById('auth-err').textContent='';
+  if(!email||!pw){document.getElementById('auth-err').textContent='Email and password required.';return;}
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error) document.getElementById('auth-err').textContent=error.message;
+}
+
+function handleAuthKey(event){
+  if(event.key!=='Enter') return;
+  event.preventDefault();
+  doSignIn();
+}
+
+async function sendMagicLink(){
+  const email=document.getElementById('auth-email').value.trim();
+  document.getElementById('auth-err').textContent='';
+  if(!email){document.getElementById('auth-err').textContent='Enter your email first.';return;}
+  const redirectTo = window.location.origin + window.location.pathname;
+  if(window.location.protocol==='file:'){
+    document.getElementById('auth-err').textContent='Use your live hosted URL, not a local file.';
+    return;
+  }
   const {error}=await sb.auth.signInWithOtp({
     email,
-    options:{shouldCreateUser:true}
+    options:{ emailRedirectTo: redirectTo }
   });
-  if(error){
-    errEl.style.color='var(--red)';
-    errEl.textContent=error.message;
-  } else {
-    errEl.style.color='var(--green)';
-    errEl.textContent='✓ Magic link sent — check your email and click the link to sign in.';
-  }
+  if(error) document.getElementById('auth-err').textContent=error.message + ' — check Supabase Site URL / Redirect URLs.';
+  else document.getElementById('auth-err').textContent='Magic link sent. Check your email.';
 }
 
 async function doSignOut(){
