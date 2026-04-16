@@ -357,12 +357,11 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <div id="auth-screen" class="auth-screen hidden">
   <div class="auth-card">
     <div class="auth-logo">ESA <span>CRM</span></div>
-    <div class="auth-sub">Sign in to access your pipeline</div>
+    <div class="auth-sub">Enter your email and we'll send you a sign-in link.</div>
     <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')doSignIn()">
-    <input class="auth-input" id="auth-password" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doSignIn()">
     <div class="auth-err" id="auth-err"></div>
     <button class="auth-btn" onclick="doSignIn()">Sign In</button>
-  </div>
+    <button class="auth-btn" onclick="doSignIn()">Send Magic Link</button>
 </div>
 
 <!-- TOPBAR -->
@@ -634,11 +633,23 @@ async function onSignedIn(user){
 
 async function doSignIn(){
   const email=document.getElementById('auth-email').value.trim();
-  const pw=document.getElementById('auth-password').value;
-  document.getElementById('auth-err').textContent='';
-  if(!email||!pw){document.getElementById('auth-err').textContent='Email and password required.';return;}
-  const {error}=await sb.auth.signInWithPassword({email,password:pw});
-  if(error) document.getElementById('auth-err').textContent=error.message;
+  const errEl=document.getElementById('auth-err');
+  errEl.textContent='';
+  errEl.style.color='var(--red)';
+  if(!email){errEl.textContent='Please enter your email address.';return;}
+  errEl.style.color='var(--wg)';
+  errEl.textContent='Sending link…';
+  const {error}=await sb.auth.signInWithOtp({
+    email,
+    options:{shouldCreateUser:true}
+  });
+  if(error){
+    errEl.style.color='var(--red)';
+    errEl.textContent=error.message;
+  } else {
+    errEl.style.color='var(--green)';
+    errEl.textContent='✓ Magic link sent — check your email and click the link to sign in.';
+  }
 }
 
 async function doSignOut(){
