@@ -1,1118 +1,1565 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ESA · Sales CRM · Stable Build</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESA · Sales CRM</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --gold:#C9A84C; --gold-l:#E8C96A; --gold-d:#8A6E2F; --gold-g:rgba(201,168,76,.10);
-  --bg:#111111; --bg2:#171717; --bg3:#222222; --line:#323232;
-  --text:#F0EDE6; --muted:#9A948B; --soft:#CFC8BE;
-  --green:#5DBE8A; --amber:#D4853A; --blue:#5A9FD4; --red:#D45A5A; --purple:#A05AD4;
-  --sidebar:250px; --topbar:58px;
+  --gold:#C9A84C;--gold-l:#E8C96A;--gold-d:#8A6E2F;--gold-g:rgba(201,168,76,0.1);
+  --ch:#111;--ch-m:#1A1A1A;--ch-s:#232323;--ch-b:#303030;
+  --ow:#F0EDE6;--wg:#888480;--tb:#B8B2A8;
+  --green:#5DBE8A;--green-g:rgba(93,190,138,0.1);
+  --amber:#D4853A;--amber-g:rgba(212,133,58,0.1);
+  --blue:#5A9FD4;--blue-g:rgba(90,159,212,0.1);
+  --red:#D45A5A;--red-g:rgba(212,90,90,0.1);
+  --purple:#A05AD4;
+  --sidebar:240px;--topbar:56px;
 }
-*{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{
-  background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif;
-  display:flex; flex-direction:column; overflow:hidden;
-}
-button,input,select,textarea{font:inherit}
-.hidden{display:none !important}
-.topbar{
-  height:var(--topbar); background:var(--bg2); border-bottom:1px solid var(--line);
-  display:flex; align-items:center; gap:.8rem; padding:0 .9rem; flex-shrink:0;
-}
-.logo{font-family:'Playfair Display',serif; color:var(--gold); font-weight:900; letter-spacing:.04em}
-.logo span{color:var(--text); font-weight:700}
-.topbar-spacer{flex:1}
-.topbar-user,.mono{font-family:'DM Mono',monospace}
-.topbar-user{font-size:.72rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.sync{display:flex; align-items:center; gap:.45rem}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
-.sync-dot.syncing{background:var(--amber); animation:pulse 1s infinite}
-.sync-dot.error{background:var(--red)}
-@keyframes pulse{50%{opacity:.35}}
-.sync-label{font-size:.68rem; color:var(--muted)}
-.btn{
-  border:1px solid var(--line); background:var(--bg3); color:var(--text); border-radius:8px;
-  padding:.45rem .75rem; cursor:pointer; transition:.15s ease;
-}
-.btn:hover{border-color:var(--gold-d)}
-.btn.gold{background:var(--gold); color:#111; border-color:var(--gold)}
-.btn.gold:hover{background:var(--gold-l)}
-.btn.ghost{color:var(--muted)}
-.layout{display:flex; flex:1; min-height:0}
-.sidebar{
-  width:var(--sidebar); background:var(--bg2); border-right:1px solid var(--line);
-  display:flex; flex-direction:column; min-height:0;
-}
-.side-label{
-  padding:.9rem 1rem .35rem; font-size:.58rem; letter-spacing:.18em; text-transform:uppercase;
-  color:var(--gold-d); font-weight:700;
-}
-.nav-item{
-  display:flex; align-items:center; gap:.65rem; padding:.62rem 1rem; color:var(--muted);
-  cursor:pointer; border-left:3px solid transparent; transition:.15s ease;
-}
-.nav-item:hover{background:rgba(255,255,255,.02); color:var(--text)}
-.nav-item.active{color:var(--gold); background:var(--gold-g); border-left-color:var(--gold)}
-.nav-badge{margin-left:auto; background:var(--gold); color:#111; border-radius:999px; font-size:.62rem; padding:.08rem .42rem; font-weight:700}
-.sidebar-bottom{margin-top:auto; padding:1rem; border-top:1px solid var(--line)}
-.kpi{
-  background:var(--bg3); border:1px solid var(--line); border-radius:10px; padding:.85rem;
-}
-.kpi-label{font-size:.58rem; text-transform:uppercase; letter-spacing:.18em; color:var(--gold-d); font-weight:700}
-.kpi-value{font-family:'Playfair Display',serif; color:var(--gold); font-size:1.35rem; font-weight:900; margin-top:.2rem}
-.kpi-sub{font-size:.72rem; color:var(--muted)}
-.main{flex:1; min-width:0; display:flex; flex-direction:column}
-.view{display:none; flex:1; min-height:0; flex-direction:column}
-.view.active{display:flex}
-.view-header{
-  padding:1rem 1.2rem .75rem; border-bottom:1px solid var(--line);
-  display:flex; align-items:center; gap:.8rem; flex-shrink:0;
-}
-.view-title{font-family:'Playfair Display',serif; font-size:1.28rem; font-weight:900}
-.view-sub{font-size:.74rem; color:var(--muted); margin-top:.18rem}
-.view-actions{margin-left:auto; display:flex; align-items:center; gap:.55rem; flex-wrap:wrap}
-.content{flex:1; min-height:0; overflow:auto; padding:1rem 1.2rem 1.2rem}
-.content::-webkit-scrollbar{width:8px;height:8px}
-.content::-webkit-scrollbar-thumb{background:var(--line); border-radius:999px}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--ch);color:var(--ow);font-family:'DM Sans',sans-serif;font-weight:300;display:flex;flex-direction:column;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;}
+.hidden{display:none!important;}
 
-.grid4{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.85rem; margin-bottom:1rem}
-@media (max-width:1000px){
-  .grid4{grid-template-columns:repeat(2, minmax(0,1fr))}
-  .cols{grid-template-columns:1fr}
-  .detail-grid{grid-template-columns:1fr}
-  .row-card{grid-template-columns:1fr}
-}
+/* LOADING */
+.loading-screen{position:fixed;inset:0;background:var(--ch);display:flex;align-items:center;justify-content:center;z-index:600;flex-direction:column;gap:0.8rem;}
+.loading-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--gold);}
+.loading-spinner{width:24px;height:24px;border:2px solid var(--ch-b);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
+.loading-sub{font-size:0.72rem;color:var(--wg);font-family:'DM Mono',monospace;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-@media (max-width:860px){
-  html,body{height:auto; min-height:100%}
-  body{overflow:auto}
-  .topbar{
-    height:auto; min-height:var(--topbar); padding:.75rem;
-    flex-wrap:wrap; align-items:center;
-  }
-  .topbar-user{max-width:140px}
-  .layout{
-    flex-direction:column; flex:unset; min-height:auto; overflow:visible;
-  }
-  .sidebar{
-    width:100%; border-right:none; border-bottom:1px solid var(--line);
-    min-height:auto;
-  }
-  .side-label{padding:.75rem 1rem .35rem}
-  .nav-item{padding:.75rem 1rem}
-  .sidebar-bottom{padding:.9rem 1rem}
-  .main{
-    min-width:100%; min-height:auto; display:block;
-  }
-  .view{
-    min-height:auto;
-  }
-  .view-header{
-    display:block; padding:1rem;
-  }
-  .view-actions{
-    margin-left:0; margin-top:.8rem; justify-content:flex-start;
-  }
-  .content{
-    overflow:visible; padding:1rem;
-  }
-  .search{
-    width:100%; min-width:0;
-  }
-}
+/* AUTH */
+.auth-screen{position:fixed;inset:0;z-index:500;background:radial-gradient(circle at top,rgba(201,168,76,0.08),transparent 35%),var(--ch);display:flex;align-items:center;justify-content:center;padding:1.2rem;}
+.auth-card{width:100%;max-width:400px;background:var(--ch-m);border:1px solid var(--ch-b);border-radius:14px;padding:1.5rem 1.35rem;box-shadow:0 24px 60px rgba(0,0,0,0.35);}
+.auth-logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin-bottom:0.2rem;}
+.auth-logo span{color:var(--ow);font-weight:400;}
+.auth-sub{font-size:0.8rem;color:var(--wg);margin-bottom:1.2rem;}
+.auth-err{font-size:0.75rem;color:var(--red);min-height:1.1em;margin-bottom:0.5rem;}
+.auth-input{width:100%;background:var(--ch-s);border:1px solid var(--ch-b);color:var(--ow);font-family:'DM Sans',sans-serif;font-size:0.85rem;padding:0.5rem 0.75rem;border-radius:6px;outline:none;margin-bottom:0.7rem;transition:border-color 0.2s;}
+.auth-input:focus{border-color:var(--gold-d);}
+.auth-input::placeholder{color:var(--wg);}
+.auth-btn{width:100%;padding:0.6rem;background:var(--gold);border:none;color:var(--ch);font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border-radius:6px;cursor:pointer;transition:background 0.2s;}
+.auth-btn:hover{background:var(--gold-l);}
 
-@media (max-width:620px){
-  .grid4{grid-template-columns:1fr}
-  .topbar{gap:.6rem}
-  .btn{padding:.45rem .65rem}
-  .view-title{font-size:1.15rem}
-  .detail-name{font-size:1.35rem}
-  .detail-money{font-size:1.2rem}
-  .filters{gap:.35rem}
-  .pill{font-size:.62rem; padding:.28rem .56rem}
-  .card-pad{padding:.9rem}
-  .row-card{padding:.85rem}
-  .location-row{
-    grid-template-columns:1fr;
-    align-items:flex-start;
-  }
-}
+/* SYNC */
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background 0.3s;}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.sync-label{font-size:0.65rem;color:var(--wg);}
 
-.card{
-  background:var(--bg2); border:1px solid var(--line); border-radius:12px; overflow:hidden;
-}
-.card.gold{background:linear-gradient(145deg, #201d13, #17150f); border-color:var(--gold-d)}
-.card-pad{padding:1rem}
-.stat-label{font-size:.58rem; text-transform:uppercase; letter-spacing:.18em; color:var(--gold-d); font-weight:700}
-.stat-value{font-family:'Playfair Display',serif; color:var(--gold); font-size:1.7rem; line-height:1; margin-top:.3rem}
-.stat-sub{font-size:.72rem; color:var(--muted); margin-top:.28rem}
+/* TOPBAR */
+.topbar{height:var(--topbar);background:var(--ch-m);border-bottom:1px solid var(--ch-b);display:flex;align-items:center;padding:0 1.2rem;gap:0.9rem;flex-shrink:0;z-index:100;}
+.topbar-logo{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--gold);white-space:nowrap;}
+.topbar-logo span{color:var(--ow);font-weight:400;}
+.topbar-divider{width:1px;height:20px;background:var(--ch-b);}
+.topbar-spacer{flex:1;}
+.topbar-date{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--wg);white-space:nowrap;}
+.topbar-sync{display:flex;align-items:center;gap:0.4rem;}
+.topbar-user{font-size:0.7rem;color:var(--wg);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.topbar-btn{font-size:0.62rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:0.26rem 0.65rem;border-radius:4px;cursor:pointer;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);font-family:'DM Sans',sans-serif;transition:all 0.15s;white-space:nowrap;}
+.topbar-btn:hover{color:var(--gold);border-color:var(--gold-d);}
+.topbar-btn.primary{background:var(--gold);color:var(--ch);border-color:var(--gold);}
+.topbar-btn.primary:hover{background:var(--gold-l);}
+.topbar-btn.danger:hover{color:var(--red);border-color:var(--red);}
+.menu-toggle{display:none;font-size:1rem;font-weight:700;width:36px;height:36px;border-radius:6px;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--gold);cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;}
 
-.cols{display:grid; grid-template-columns:1.2fr .8fr; gap:1rem}
-@media (max-width:900px){.cols{grid-template-columns:1fr}}
-.card-head{
-  padding:.8rem 1rem; background:var(--bg3); border-bottom:1px solid var(--line);
-  display:flex; justify-content:space-between; align-items:center;
-}
-.card-title{font-size:.62rem; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); font-weight:700}
-.badge{font-size:.65rem; color:var(--gold); font-weight:700}
-.list{display:flex; flex-direction:column}
-.item{
-  padding:.8rem 1rem; border-bottom:1px solid rgba(255,255,255,.04);
-}
-.item:last-child{border-bottom:none}
-.item-main{font-size:.82rem; color:var(--soft); line-height:1.45}
-.item-main strong{color:var(--text)}
-.item-meta{font-size:.68rem; color:var(--muted); margin-top:.18rem}
-.empty{padding:1.2rem; color:var(--muted); font-size:.82rem; text-align:center}
+/* LAYOUT */
+.app-body{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:var(--sidebar);background:var(--ch-m);border-right:1px solid var(--ch-b);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.sidebar-section{padding:0.4rem 0;border-bottom:1px solid var(--ch-s);}
+.sidebar-label{font-size:0.56rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold-d);padding:0.5rem 1rem 0.2rem;}
+.nav-item{display:flex;align-items:center;gap:0.6rem;padding:0.48rem 1rem;cursor:pointer;font-size:0.8rem;color:var(--wg);transition:all 0.15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--ow);background:rgba(255,255,255,0.02);}
+.nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-g);}
+.nav-icon{font-size:0.82rem;width:18px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;font-size:0.58rem;font-weight:700;background:var(--gold);color:var(--ch);padding:0.1rem 0.38rem;border-radius:10px;min-width:18px;text-align:center;}
+.nav-badge.red{background:var(--red);}
+.sidebar-pipeline{padding:0.5rem 1rem;}
+.ps-row{display:flex;align-items:center;gap:0.4rem;padding:0.22rem 0;cursor:pointer;}
+.ps-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ps-name{font-size:0.72rem;color:var(--wg);flex:1;}
+.ps-row:hover .ps-name{color:var(--ow);}
+.ps-count{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--wg);}
+.sidebar-bottom{margin-top:auto;padding:0.8rem;border-top:1px solid var(--ch-s);}
+.mrr-display{background:var(--ch-s);border:1px solid var(--ch-b);border-radius:6px;padding:0.6rem 0.8rem;}
+.mrr-label{font-size:0.55rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-d);display:block;margin-bottom:0.2rem;}
+.mrr-val{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold);display:block;}
+.mrr-sub{font-size:0.62rem;color:var(--wg);}
 
-.search{
-  min-width:220px; border-radius:999px; border:1px solid var(--line); background:var(--bg3);
-  color:var(--text); padding:.48rem .75rem; outline:none;
-}
-.search:focus{border-color:var(--gold-d)}
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.view{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.view.active{display:flex;}
+.view-header{padding:1rem 1.4rem 0.7rem;border-bottom:1px solid var(--ch-s);display:flex;align-items:center;gap:1rem;flex-shrink:0;}
+.view-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--ow);}
+.view-sub{font-size:0.74rem;color:var(--wg);margin-top:0.1rem;}
+.view-header-right{margin-left:auto;display:flex;gap:0.5rem;align-items:center;}
+.search-box{background:var(--ch-s);border:1px solid var(--ch-b);color:var(--ow);font-family:'DM Sans',sans-serif;font-size:0.76rem;padding:0.28rem 0.65rem;border-radius:20px;outline:none;width:185px;transition:border-color 0.2s;}
+.search-box::placeholder{color:var(--wg);}
+.search-box:focus{border-color:var(--gold-d);}
+.view-content{flex:1;overflow-y:auto;padding:1.1rem 1.4rem;}
+.view-content::-webkit-scrollbar{width:4px;}
+.view-content::-webkit-scrollbar-thumb{background:var(--ch-b);border-radius:2px;}
 
-.filters{display:flex; gap:.45rem; flex-wrap:wrap; margin-bottom:.9rem}
-.pill{
-  border:1px solid var(--line); background:var(--bg2); color:var(--muted);
-  border-radius:999px; padding:.3rem .65rem; cursor:pointer; font-size:.66rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700;
-}
-.pill.active{background:var(--gold-g); color:var(--gold); border-color:var(--gold)}
-.rows{display:flex; flex-direction:column; gap:.55rem}
-.row-card{
-  background:var(--bg2); border:1px solid var(--line); border-left:4px solid transparent; border-radius:10px;
-  padding:.9rem 1rem; display:grid; grid-template-columns:1fr auto auto auto; gap:.75rem; align-items:center;
-}
-.row-card:hover{border-color:var(--gold-d)}
-@media (max-width:760px){.row-card{grid-template-columns:1fr; align-items:flex-start}}
-.row-card.stage-new{border-left-color:#666}
-.row-card.stage-contacted{border-left-color:var(--blue)}
-.row-card.stage-demo{border-left-color:var(--purple)}
-.row-card.stage-proposal{border-left-color:var(--amber)}
-.row-card.stage-won{border-left-color:var(--green)}
-.row-card.stage-lost{border-left-color:var(--red)}
-.row-name{font-weight:700}
-.row-meta{font-size:.73rem; color:var(--muted); margin-top:.18rem}
-.stage{
-  border-radius:999px; padding:.18rem .52rem; font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700; display:inline-block;
-}
-.s-new{background:#2a2a2a;color:#a7a7a7}
-.s-contacted{background:rgba(90,159,212,.12); color:var(--blue)}
-.s-demo{background:rgba(160,90,212,.14); color:var(--purple)}
-.s-proposal{background:rgba(212,133,58,.14); color:var(--amber)}
-.s-won{background:rgba(93,190,138,.14); color:var(--green)}
-.s-lost{background:rgba(212,90,90,.14); color:var(--red)}
-.money{color:var(--gold); font-family:'DM Mono',monospace; font-size:.84rem}
-.followup{font-family:'DM Mono',monospace; font-size:.72rem}
-.followup.overdue{color:var(--red)} .followup.today{color:var(--amber)} .followup.ok{color:var(--green)} .followup.none{color:var(--muted)}
+/* DASHBOARD */
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.9rem;margin-bottom:1.3rem;}
+.stat-card{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:8px;padding:1rem 1.1rem;}
+.stat-card.gold-card{background:linear-gradient(145deg,#1E1C14,#1A1810);border-color:var(--gold-d);}
+.sc-label{font-size:0.55rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-d);display:block;margin-bottom:0.3rem;}
+.sc-val{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:900;color:var(--gold);display:block;line-height:1;}
+.sc-sub{font-size:0.68rem;color:var(--wg);margin-top:0.25rem;}
+.dash-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;}
+.dash-panel{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:8px;overflow:hidden;}
+.dp-header{padding:0.65rem 0.9rem;background:var(--ch-s);border-bottom:1px solid var(--ch-b);display:flex;align-items:center;justify-content:space-between;}
+.dp-title{font-size:0.6rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--wg);}
+.dp-count{font-size:0.62rem;font-weight:700;color:var(--gold);}
+.activity-item{padding:0.65rem 0.9rem;border-bottom:1px solid var(--ch-s);display:flex;align-items:flex-start;gap:0.6rem;}
+.activity-item:last-child{border-bottom:none;}
+.ai-icon{font-size:0.78rem;flex-shrink:0;}
+.ai-content{flex:1;min-width:0;}
+.ai-main{font-size:0.77rem;color:var(--tb);line-height:1.4;}
+.ai-main strong{color:var(--ow);font-weight:500;}
+.ai-date{font-size:0.65rem;color:var(--wg);font-family:'DM Mono',monospace;margin-top:0.1rem;}
+.followup-item{padding:0.65rem 0.9rem;border-bottom:1px solid var(--ch-s);display:flex;align-items:center;gap:0.6rem;cursor:pointer;transition:background 0.15s;}
+.followup-item:hover{background:rgba(201,168,76,0.03);}
+.followup-item:last-child{border-bottom:none;}
+.fi-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.fi-dot.overdue{background:var(--red);}
+.fi-dot.today{background:var(--amber);}
+.fi-dot.upcoming{background:var(--green);}
+.fi-name{font-size:0.8rem;color:var(--ow);font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fi-date{font-size:0.68rem;color:var(--wg);font-family:'DM Mono',monospace;}
+.fi-date.overdue{color:var(--red);}
+.fi-date.today{color:var(--amber);}
+.pipeline-bars{padding:0.9rem;}
+.pb-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;}
+.pb-label{font-size:0.7rem;color:var(--wg);width:105px;flex-shrink:0;}
+.pb-track{flex:1;height:5px;background:var(--ch-s);border-radius:3px;overflow:hidden;}
+.pb-fill{height:100%;border-radius:3px;width:0;transition:width 0.8s cubic-bezier(0.22,1,0.36,1);}
+.pb-num{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--wg);width:22px;text-align:right;}
 
-.detail-wrap{max-width:1280px; width:100%}
-.back{display:inline-flex; gap:.35rem; color:var(--muted); cursor:pointer; text-transform:uppercase; letter-spacing:.1em; font-size:.68rem; font-weight:700; margin-bottom:.8rem}
-.back:hover{color:var(--gold)}
-.detail-head{display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1rem}
-.detail-name{font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:900}
-.detail-sub{font-size:.82rem; color:var(--muted); margin-top:.2rem}
-.detail-kpis{text-align:right}
-.detail-money{font-family:'Playfair Display',serif; font-size:1.45rem; color:var(--gold); font-weight:900}
-.detail-grid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:1rem}
-@media (max-width:900px){.detail-grid{grid-template-columns:1fr}}
-.field{display:flex; gap:.45rem; margin-bottom:.55rem; font-size:.82rem}
-.field b{color:var(--text)}
-.linkish{color:var(--gold); cursor:pointer; text-decoration:none}
-.linkish:hover{text-decoration:underline}
+/* ACCOUNTS */
+.filter-row{display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem;align-items:center;}
+.fbtn{font-size:0.62rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:0.22rem 0.65rem;border-radius:20px;cursor:pointer;border:1px solid var(--ch-b);background:var(--ch-m);color:var(--wg);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.fbtn:hover{border-color:var(--gold-d);color:var(--ow);}
+.fbtn.active{background:var(--gold-g);border-color:var(--gold);color:var(--gold);}
+.fbtn-sep{width:1px;height:16px;background:var(--ch-b);margin:0 0.2rem;}
+.acct-list{display:flex;flex-direction:column;gap:0.45rem;}
+.acct-card{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:8px;padding:0.8rem 1rem;display:grid;grid-template-columns:1fr auto auto auto;gap:0.7rem;align-items:center;cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;}
+.acct-card:hover{border-color:var(--gold-d);background:rgba(201,168,76,0.02);}
+.acct-card.stage-new{border-left-color:#555;}
+.acct-card.stage-contacted{border-left-color:var(--blue);}
+.acct-card.stage-demo{border-left-color:var(--purple);}
+.acct-card.stage-proposal{border-left-color:var(--amber);}
+.acct-card.stage-won{border-left-color:var(--green);}
+.acct-card.stage-lost{border-left-color:var(--red);}
+.ac-name{font-weight:600;color:var(--ow);font-size:0.88rem;margin-bottom:0.15rem;}
+.ac-meta{font-size:0.7rem;color:var(--wg);}
+.ac-stage{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.18rem 0.55rem;border-radius:20px;}
+.ac-mrr{font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--gold);text-align:right;}
+.ac-mrr small{display:block;font-size:0.62rem;color:var(--wg);}
+.ac-followup{font-size:0.66rem;font-family:'DM Mono',monospace;text-align:right;}
+.ac-followup.overdue{color:var(--red);}
+.ac-followup.today{color:var(--amber);}
+.ac-followup.ok{color:var(--green);}
+.ac-followup.none{color:var(--wg);}
+.s-new{background:#2a2a2a;color:#888;}
+.s-contacted{background:var(--blue-g);color:var(--blue);}
+.s-demo{background:rgba(160,90,212,0.1);color:var(--purple);}
+.s-proposal{background:var(--amber-g);color:var(--amber);}
+.s-won{background:var(--green-g);color:var(--green);}
+.s-lost{background:var(--red-g);color:var(--red);}
 
-.location-row{
-  display:grid; grid-template-columns:1fr auto; gap:.75rem; align-items:center;
-  padding:.75rem 0; border-bottom:1px solid rgba(255,255,255,.05);
+/* DETAIL */
+.detail-scroll{flex:1;overflow-y:auto;padding:1.4rem;}
+.detail-scroll::-webkit-scrollbar{width:4px;}
+.detail-scroll::-webkit-scrollbar-thumb{background:var(--ch-b);border-radius:2px;}
+.dv-back{font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--wg);cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;margin-bottom:0.8rem;transition:color 0.15s;}
+.dv-back:hover{color:var(--gold);}
+.dv-name{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:var(--ow);}
+.dv-region{font-size:0.78rem;color:var(--wg);margin-top:0.2rem;}
+.dv-badges{display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem;}
+.dv-mrr-block{margin-left:auto;text-align:right;}
+.dv-mrr{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--gold);}
+.dv-arr{font-size:0.7rem;color:var(--wg);}
+.dv-header-row{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;margin-bottom:1rem;}
+.dv-panel{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
+.dvp-hdr{padding:0.55rem 0.9rem;background:var(--ch-s);border-bottom:1px solid var(--ch-b);display:flex;align-items:center;justify-content:space-between;}
+.dvp-title{font-size:0.58rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-d);}
+.dvp-body{padding:0.9rem;}
+.dvp-row{display:flex;gap:0.4rem;margin-bottom:0.5rem;font-size:0.8rem;align-items:flex-start;}
+.dvp-row:last-child{margin-bottom:0;}
+.dvp-icon{font-size:0.72rem;color:var(--wg);flex-shrink:0;width:16px;margin-top:0.1rem;}
+.dvp-val{color:var(--tb);line-height:1.5;flex:1;}
+.dvp-val strong{color:var(--ow);font-weight:500;}
+.dvp-val a{color:var(--gold);text-decoration:none;}
+.dvp-val a:hover{text-decoration:underline;}
+.loc-row{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--ch-s);cursor:pointer;}
+.loc-row:last-child{border-bottom:none;}
+.loc-row:hover .loc-name{color:var(--gold);}
+.loc-num{font-size:0.6rem;color:var(--wg);flex-shrink:0;width:16px;}
+.loc-name{font-size:0.8rem;color:var(--ow);flex:1;}
+.loc-meta{font-size:0.68rem;color:var(--wg);}
+.loc-open{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:3px;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.loc-open:hover{color:var(--gold);border-color:var(--gold-d);}
+.stage-editor{display:flex;gap:0.35rem;flex-wrap:wrap;}
+.stage-opt{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.22rem 0.55rem;border-radius:20px;cursor:pointer;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.stage-opt.sel-new{background:#2a2a2a;color:#888;border-color:#444;}
+.stage-opt.sel-contacted{background:var(--blue-g);color:var(--blue);border-color:var(--blue);}
+.stage-opt.sel-demo{background:rgba(160,90,212,0.1);color:var(--purple);border-color:var(--purple);}
+.stage-opt.sel-proposal{background:var(--amber-g);color:var(--amber);border-color:var(--amber);}
+.stage-opt.sel-won{background:var(--green-g);color:var(--green);border-color:var(--green);}
+.stage-opt.sel-lost{background:var(--red-g);color:var(--red);border-color:var(--red);}
+.fu-row{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;}
+.fu-input{background:var(--ch-m);border:1px solid var(--ch-b);color:var(--ow);font-family:'DM Sans',sans-serif;font-size:0.76rem;padding:0.28rem 0.55rem;border-radius:4px;outline:none;}
+.fu-input:focus{border-color:var(--gold-d);}
+.fu-clr{font-size:0.62rem;font-weight:600;padding:0.22rem 0.5rem;border-radius:3px;cursor:pointer;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);font-family:'DM Sans',sans-serif;}
+.fu-clr:hover{color:var(--red);border-color:var(--red);}
+.fu-label{font-size:0.75rem;color:var(--wg);}
+.act-log{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
+.act-add{display:flex;gap:0.5rem;padding:0.7rem 0.9rem;background:var(--ch-s);border-bottom:1px solid var(--ch-b);flex-wrap:wrap;align-items:center;}
+.act-type-sel,.act-text-inp{background:var(--ch-m);border:1px solid var(--ch-b);color:var(--ow);font-family:'DM Sans',sans-serif;font-size:0.76rem;padding:0.28rem 0.55rem;border-radius:4px;outline:none;}
+.act-type-sel{cursor:pointer;flex-shrink:0;}
+.act-text-inp{flex:1;min-width:130px;}
+.act-text-inp:focus{border-color:var(--gold-d);}
+.act-text-inp::placeholder{color:var(--wg);}
+.act-log-btn{font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.28rem 0.75rem;border-radius:4px;cursor:pointer;border:none;background:var(--gold);color:var(--ch);font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.act-log-btn:hover{background:var(--gold-l);}
+.act-entries{max-height:260px;overflow-y:auto;}
+.act-entry{padding:0.65rem 0.9rem;border-bottom:1px solid var(--ch-s);display:flex;gap:0.6rem;align-items:flex-start;}
+.act-entry:last-child{border-bottom:none;}
+.ae-type{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.13rem 0.38rem;border-radius:3px;flex-shrink:0;margin-top:0.1rem;}
+.ae-call{background:var(--green-g);color:var(--green);}
+.ae-email{background:var(--blue-g);color:var(--blue);}
+.ae-walkin{background:var(--amber-g);color:var(--amber);}
+.ae-demo{background:rgba(160,90,212,0.1);color:var(--purple);}
+.ae-note{background:var(--ch-s);color:var(--wg);}
+.ae-body{flex:1;}
+.ae-text{font-size:0.8rem;color:var(--tb);line-height:1.4;}
+.ae-date{font-size:0.62rem;color:var(--wg);font-family:'DM Mono',monospace;margin-top:0.1rem;}
+.ae-del{font-size:0.62rem;color:var(--ch-b);cursor:pointer;padding:0.1rem 0.25rem;transition:color 0.15s;flex-shrink:0;}
+.ae-del:hover{color:var(--red);}
+.act-empty{padding:1.3rem;text-align:center;font-size:0.78rem;color:var(--wg);}
+.notes-panel{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
+.notes-ta{width:100%;background:transparent;border:none;color:var(--ow);font-family:'DM Sans',sans-serif;font-size:0.8rem;padding:0.9rem;resize:vertical;min-height:90px;outline:none;line-height:1.6;}
+.notes-ta::placeholder{color:var(--wg);}
+.notes-footer{padding:0.35rem 0.75rem;background:var(--ch-s);border-top:1px solid var(--ch-b);display:flex;align-items:center;justify-content:space-between;}
+.notes-save-btn{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.18rem 0.55rem;border-radius:3px;cursor:pointer;border:1px solid var(--gold-d);background:transparent;color:var(--gold);font-family:'DM Sans',sans-serif;}
+.notes-save-btn:hover{background:var(--gold-g);}
+.notes-status{font-size:0.62rem;color:var(--wg);}
+.quick-actions{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;}
+.qa-btn{font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.28rem 0.65rem;border-radius:20px;cursor:pointer;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.qa-btn:hover{border-color:var(--gold-d);color:var(--gold);}
+
+/* PIPELINE */
+.kanban{display:flex;gap:0.7rem;padding:0.2rem 0 1rem;overflow-x:auto;}
+.kanban::-webkit-scrollbar{height:4px;}
+.kanban::-webkit-scrollbar-thumb{background:var(--ch-b);border-radius:2px;}
+.kb-col{flex-shrink:0;width:210px;display:flex;flex-direction:column;gap:0.35rem;}
+.kb-hdr{padding:0.55rem 0.75rem;border-radius:5px 5px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.kb-title{font-size:0.6rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;}
+.kb-count{font-size:0.6rem;font-weight:700;opacity:0.8;}
+.kb-cards{flex:1;display:flex;flex-direction:column;gap:0.35rem;}
+.kb-card{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:6px;padding:0.65rem 0.75rem;cursor:pointer;transition:all 0.15s;}
+.kb-card:hover{border-color:var(--gold-d);transform:translateY(-1px);}
+.kbc-name{font-size:0.8rem;font-weight:600;color:var(--ow);margin-bottom:0.18rem;line-height:1.3;}
+.kbc-region{font-size:0.65rem;color:var(--wg);}
+.kbc-mrr{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--gold);margin-top:0.3rem;}
+.kbc-fu{font-size:0.6rem;font-family:'DM Mono',monospace;margin-top:0.18rem;}
+.kbc-fu.overdue{color:var(--red);}
+.kbc-fu.today{color:var(--amber);}
+
+/* TODAY + TASKS */
+.today-section{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
+.today-item{padding:0.8rem 0.95rem;border-bottom:1px solid var(--ch-s);display:flex;align-items:flex-start;gap:0.8rem;}
+.today-item:last-child{border-bottom:none;}
+.ti-body{flex:1;min-width:0;}
+.ti-name{font-size:0.84rem;font-weight:600;color:var(--ow);margin-bottom:0.18rem;}
+.ti-meta{font-size:0.72rem;color:var(--wg);line-height:1.45;}
+.ti-actions{display:flex;gap:0.35rem;flex-wrap:wrap;margin-top:0.45rem;}
+.ti-btn{font-size:0.62rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.ti-btn:hover{color:var(--gold);border-color:var(--gold-d);}
+.ti-date{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--wg);white-space:nowrap;}
+.ti-date.overdue{color:var(--red);}
+.ti-date.today{color:var(--amber);}
+.ti-date.upcoming{color:var(--green);}
+.task-priority{font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.1rem 0.35rem;border-radius:3px;margin-right:0.35rem;}
+.task-priority.high{background:var(--red-g);color:var(--red);}
+.task-priority.normal{background:var(--ch-s);color:var(--wg);}
+.task-priority.low{background:var(--green-g);color:var(--green);}
+.today-empty{padding:1.2rem;text-align:center;font-size:0.78rem;color:var(--wg);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--ch-m);border:1px solid var(--ch-b);border-radius:10px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
+.modal::-webkit-scrollbar{width:4px;}
+.modal::-webkit-scrollbar-thumb{background:var(--ch-b);}
+.modal-hdr{padding:1rem 1.3rem;border-bottom:1px solid var(--ch-b);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--ow);}
+.modal-close{font-size:1rem;color:var(--wg);cursor:pointer;background:none;border:none;line-height:1;}
+.modal-close:hover{color:var(--ow);}
+.modal-body{padding:1rem 1.3rem;}
+.modal-footer{padding:0.7rem 1.3rem;border-top:1px solid var(--ch-b);display:flex;gap:0.5rem;justify-content:flex-end;}
+.form-group{margin-bottom:0.85rem;}
+.form-label{font-size:0.6rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-d);display:block;margin-bottom:0.35rem;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--ch-s);border:1px solid var(--ch-b);color:var(--ow);font-family:'DM Sans',sans-serif;font-size:0.8rem;padding:0.38rem 0.65rem;border-radius:4px;outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--gold-d);}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--wg);}
+.form-textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.btn{font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:0.38rem 0.9rem;border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.btn-ghost{background:transparent;border:1px solid var(--ch-b);color:var(--wg);}
+.btn-ghost:hover{border-color:var(--gold-d);color:var(--ow);}
+.btn-gold{background:var(--gold);border:1px solid var(--gold);color:var(--ch);}
+.btn-gold:hover{background:var(--gold-l);}
+
+/* FAB */
+.fab{position:fixed;right:18px;bottom:18px;width:54px;height:54px;border-radius:50%;border:none;background:var(--gold);color:var(--ch);font-size:1.7rem;line-height:1;box-shadow:0 10px 24px rgba(0,0,0,0.35);cursor:pointer;z-index:320;display:flex;align-items:center;justify-content:center;}
+.fab:hover{background:var(--gold-l);}
+
+/* MOBILE */
+.sidebar-overlay{display:none;}
+@media(max-width:900px){
+  .menu-toggle{display:flex;}
+  .sidebar{position:fixed;top:var(--topbar);left:0;bottom:0;z-index:300;transform:translateX(-100%);transition:transform 0.25s ease;box-shadow:0 0 20px rgba(0,0,0,0.35);}
+  body.sidebar-open .sidebar{transform:translateX(0);}
+  .sidebar-overlay{display:block;position:fixed;inset:var(--topbar) 0 0 0;z-index:250;background:rgba(0,0,0,0.45);opacity:0;pointer-events:none;transition:opacity 0.25s ease;}
+  body.sidebar-open .sidebar-overlay{opacity:1;pointer-events:auto;}
+  .topbar{padding:0 0.8rem;gap:0.6rem;}
+  .topbar-date,.topbar-user{display:none;}
+  .view-content{padding:0.9rem 1rem;}
+  .dash-grid{grid-template-columns:1fr 1fr;gap:0.7rem;}
+  .dv-grid{grid-template-columns:1fr;}
+  .dash-cols{grid-template-columns:1fr;}
+  .acct-card{grid-template-columns:1fr auto;gap:0.4rem;}
+  .ac-mrr,.ac-followup{display:none;}
 }
-.location-row:last-child{border-bottom:none}
-.location-name{font-weight:700}
-.location-meta,.small{font-size:.73rem; color:var(--muted)}
-.log-row{padding:.75rem 1rem; border-bottom:1px solid rgba(255,255,255,.05)}
-.log-row:last-child{border-bottom:none}
-.status-box{
-  margin-top:.8rem; border:1px dashed var(--line); border-radius:10px; padding:.7rem .85rem; font-size:.76rem; color:var(--muted);
-}
-.loading-screen{
-  position:fixed; inset:0; z-index:60; background:rgba(17,17,17,.88);
-  display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.7rem;
-}
-.spinner{
-  width:28px; height:28px; border-radius:50%; border:3px solid rgba(201,168,76,.18); border-top-color:var(--gold);
-  animation:spin .85s linear infinite
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.auth-screen{
-  position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(circle at top, rgba(201,168,76,.08), transparent 30%), var(--bg);
-  padding:1rem;
-}
-.auth-card{
-  width:100%; max-width:420px; background:var(--bg2); border:1px solid var(--line); border-radius:16px;
-  padding:1.35rem; box-shadow:0 30px 60px rgba(0,0,0,.35);
-}
-.auth-title{font-family:'Playfair Display',serif; color:var(--gold); font-size:1.55rem; font-weight:900}
-.auth-title span{color:var(--text); font-weight:700}
-.auth-sub{margin:.2rem 0 1rem; color:var(--muted); font-size:.84rem; line-height:1.55}
-.form-group{margin-bottom:.85rem}
-.label{display:block; font-size:.62rem; text-transform:uppercase; letter-spacing:.16em; color:var(--gold-d); font-weight:700; margin-bottom:.35rem}
-.input, .select, .textarea{
-  width:100%; border-radius:10px; background:var(--bg3); border:1px solid var(--line); color:var(--text);
-  padding:.68rem .78rem; outline:none;
-}
-.input:focus,.select:focus,.textarea:focus{border-color:var(--gold-d)}
-.auth-actions{display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.7rem}
-.auth-status{min-height:1.2rem; color:var(--muted); font-size:.76rem; margin-top:.8rem}
-.error-panel{
-  border:1px solid rgba(212,90,90,.35); background:rgba(212,90,90,.08); color:#ffc2c2;
-  padding:.7rem .85rem; border-radius:10px; margin-bottom:1rem; font-size:.76rem
+@media(max-width:560px){
+  .dash-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
-  <div class="auth-screen" id="auth-screen">
-    <div class="auth-card">
-      <div class="auth-title">ESA <span>Sales CRM</span></div>
-      <div class="auth-sub">Stable build. Sign in with your Supabase auth account to load organizations, locations, tasks, and activity from the CRM tables.</div>
 
-      <div class="form-group">
-        <label class="label">Email</label>
-        <input id="auth-email" class="input" placeholder="you@example.com" />
-      </div>
-      <div class="form-group">
-        <label class="label">Password</label>
-        <input id="auth-password" class="input" type="password" placeholder="Password" />
-      </div>
+<!-- LOADING -->
+<div id="loading-screen" class="loading-screen">
+  <div class="loading-logo">ESA CRM</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-sub" id="loading-msg">Connecting…</div>
+</div>
 
-      <div class="auth-actions">
-        <button class="btn gold" onclick="signIn()">Sign In</button>
-        <button class="btn" onclick="sendMagicLink()">Send Magic Link</button>
+<!-- AUTH -->
+<div id="auth-screen" class="auth-screen hidden">
+  <div class="auth-card">
+    <div class="auth-logo">ESA <span>CRM</span></div>
+
+    <!-- SIGN IN MODE -->
+    <div id="auth-mode-login">
+      <div class="auth-sub">Sign in to your account.</div>
+      <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
+      <input class="auth-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doSignIn()">
+      <div class="auth-err" id="auth-err"></div>
+      <button class="auth-btn" onclick="doSignIn()">Sign In</button>
+      <div style="text-align:center;margin-top:0.75rem">
+        <span style="font-size:0.72rem;color:var(--wg);cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="switchAuthMode('reset')">Forgot password?</span>
       </div>
-      <div id="auth-status" class="auth-status"></div>
+    </div>
+
+    <!-- RESET PASSWORD MODE -->
+    <div id="auth-mode-reset" style="display:none">
+      <div class="auth-sub">Enter your email and we'll send a password reset link.</div>
+      <input class="auth-input" id="auth-reset-email" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')doSendReset()">
+      <div class="auth-err" id="auth-reset-err"></div>
+      <button class="auth-btn" onclick="doSendReset()">Send Reset Link</button>
+      <div style="text-align:center;margin-top:0.75rem">
+        <span style="font-size:0.72rem;color:var(--wg);cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="switchAuthMode('login')">← Back to sign in</span>
+      </div>
+    </div>
+
+    <!-- SET NEW PASSWORD MODE (after clicking reset link) -->
+    <div id="auth-mode-newpass" style="display:none">
+      <div class="auth-sub">Choose a new password for your account.</div>
+      <input class="auth-input" id="auth-newpass" type="password" placeholder="New password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSetNewPassword()">
+      <input class="auth-input" id="auth-newpass-confirm" type="password" placeholder="Confirm new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSetNewPassword()">
+      <div class="auth-err" id="auth-newpass-err"></div>
+      <button class="auth-btn" onclick="doSetNewPassword()">Set Password & Sign In</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar" id="topbar" style="display:none">
+  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+  <div class="topbar-logo">ESA <span>CRM</span></div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-sync"><div class="sync-dot" id="sync-dot"></div><span class="sync-label" id="sync-label">Synced</span></div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-date" id="topbar-date"></div>
+  <div class="topbar-user" id="topbar-user"></div>
+  <button class="topbar-btn primary" onclick="openModal('add-acct-modal')">+ Add</button>
+  <button class="topbar-btn danger" onclick="doSignOut()">Sign Out</button>
+</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- APP BODY -->
+<div class="app-body" id="app-body" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <div class="nav-item active" onclick="showView('today',this)"><span class="nav-icon">☀</span> Today <span class="nav-badge red" id="nav-today-badge" style="display:none">0</span></div>
+      <div class="nav-item" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span> Dashboard</div>
+      <div class="nav-item" onclick="showView('accounts',this)"><span class="nav-icon">◉</span> Accounts <span class="nav-badge" id="nav-accts-badge">0</span></div>
+      <div class="nav-item" onclick="showView('pipeline',this)"><span class="nav-icon">◧</span> Pipeline</div>
+      <div class="nav-item" onclick="showView('tasks',this)"><span class="nav-icon">✓</span> Tasks</div>
+      <div class="nav-item" onclick="showView('followups',this)"><span class="nav-icon">◷</span> Follow-Ups</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Pipeline</div>
+      <div class="sidebar-pipeline" id="sb-pipeline"></div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="mrr-display">
+        <span class="mrr-label">Won MRR</span>
+        <span class="mrr-val" id="sb-mrr">$0</span>
+        <span class="mrr-sub" id="sb-arr">$0 / year</span>
+      </div>
     </div>
   </div>
 
-  <div class="loading-screen hidden" id="loading-screen">
-    <div class="spinner"></div>
-    <div id="loading-msg" style="color:var(--muted);font-size:.85rem">Loading…</div>
-  </div>
+  <!-- MAIN -->
+  <div class="main">
 
-  <div class="topbar hidden" id="topbar">
-    <div class="logo">ESA <span>CRM</span></div>
-    <div class="sync">
-      <div class="sync-dot" id="sync-dot"></div>
-      <div class="sync-label" id="sync-label">Ready</div>
-    </div>
-    <div class="topbar-spacer"></div>
-    <button class="btn ghost" onclick="manualRefresh()">Refresh</button>
-    <div class="topbar-user" id="topbar-user"></div>
-    <button class="btn ghost" onclick="signOut()">Sign Out</button>
-  </div>
-
-  <div class="layout hidden" id="app-body">
-    <aside class="sidebar">
-      <div class="side-label">Workspace</div>
-      <div class="nav-item active" data-view="today" onclick="showView('today', this)"><span>Today</span><span class="nav-badge" id="nav-today-count">0</span></div>
-      <div class="nav-item" data-view="dashboard" onclick="showView('dashboard', this)"><span>Dashboard</span></div>
-      <div class="nav-item" data-view="accounts" onclick="showView('accounts', this)"><span>Organizations</span><span class="nav-badge" id="nav-org-count">0</span></div>
-      <div class="nav-item" data-view="tasks" onclick="showView('tasks', this)"><span>Tasks</span><span class="nav-badge" id="nav-task-count">0</span></div>
-      <div class="sidebar-bottom">
-        <div class="kpi">
-          <div class="kpi-label">Pipeline MRR</div>
-          <div class="kpi-value" id="sidebar-mrr">$0</div>
-          <div class="kpi-sub" id="sidebar-sub">0 active organizations</div>
-        </div>
-        <div class="status-box" id="debug-status">No load issues detected yet.</div>
+    <!-- TODAY -->
+    <div id="view-today" class="view active">
+      <div class="view-header"><div><div class="view-title">Today</div><div class="view-sub">Overdue + due today + next 7 days</div></div><div class="view-header-right"><button class="topbar-btn" onclick="openTaskModal()">+ Task</button></div></div>
+      <div class="view-content">
+        <div class="dash-grid" id="today-stats"></div>
+        <div class="today-section"><div class="dp-header"><span class="dp-title">🔴 Overdue</span><span class="dp-count" id="today-od-count">0</span></div><div id="today-od"></div></div>
+        <div class="today-section"><div class="dp-header"><span class="dp-title">🟡 Due Today</span><span class="dp-count" id="today-now-count">0</span></div><div id="today-now"></div></div>
+        <div class="today-section"><div class="dp-header"><span class="dp-title">🟢 Next 7 Days</span><span class="dp-count" id="today-up-count">0</span></div><div id="today-up"></div></div>
       </div>
-    </aside>
+    </div>
 
-    <main class="main">
-      <section class="view active" id="view-today">
-        <div class="view-header">
-          <div>
-            <div class="view-title">Today</div>
-            <div class="view-sub">Immediate priorities and due follow-ups</div>
-          </div>
-          <div class="view-actions"></div>
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="view">
+      <div class="view-header"><div><div class="view-title">Dashboard</div><div class="view-sub">Pipeline at a glance</div></div></div>
+      <div class="view-content">
+        <div class="dash-grid" id="dash-stats"></div>
+        <div class="dash-cols">
+          <div class="dash-panel"><div class="dp-header"><span class="dp-title">Follow-Ups Due</span><span class="dp-count" id="dp-fu-count">0</span></div><div id="dp-followups"></div></div>
+          <div class="dash-panel"><div class="dp-header"><span class="dp-title">Recent Activity</span><span class="dp-count" id="dp-act-count"></span></div><div id="dp-activity"></div></div>
         </div>
-        <div class="content">
-          <div id="today-errors"></div>
-          <div class="cols">
-            <div class="card">
-              <div class="card-head"><div class="card-title">Due now</div><div class="badge" id="today-due-count">0</div></div>
-              <div class="list" id="today-due-list"></div>
-            </div>
-            <div class="card">
-              <div class="card-head"><div class="card-title">Quick snapshot</div></div>
-              <div class="card-pad" id="today-snapshot"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+        <div class="dash-panel" style="margin-top:1.1rem"><div class="dp-header"><span class="dp-title">Pipeline Breakdown</span></div><div class="pipeline-bars" id="dp-bars"></div></div>
+      </div>
+    </div>
 
-      <section class="view" id="view-dashboard">
-        <div class="view-header">
-          <div>
-            <div class="view-title">Dashboard</div>
-            <div class="view-sub">Stable load with isolated widget failures</div>
-          </div>
-        </div>
-        <div class="content">
-          <div id="dashboard-errors"></div>
-          <div class="grid4" id="dashboard-stats"></div>
-          <div class="cols">
-            <div class="card">
-              <div class="card-head"><div class="card-title">Recent activity</div><div class="badge" id="activity-count">0</div></div>
-              <div class="list" id="recent-activity"></div>
-            </div>
-            <div class="card">
-              <div class="card-head"><div class="card-title">Follow-ups</div><div class="badge" id="followup-count">0</div></div>
-              <div class="list" id="dashboard-followups"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <!-- ACCOUNTS -->
+    <div id="view-accounts" class="view">
+      <div class="view-header"><div><div class="view-title">Accounts</div><div class="view-sub" id="accts-sub">All groups</div></div><div class="view-header-right"><input class="search-box" type="text" placeholder="Search…" oninput="acctSearch=this.value;renderAccounts()"></div></div>
+      <div class="view-content"><div class="filter-row" id="acct-filters"></div><div class="acct-list" id="acct-list"></div></div>
+    </div>
 
-      <section class="view" id="view-accounts">
-        <div class="view-header">
-          <div>
-            <div class="view-title">Organizations</div>
-            <div class="view-sub">All restaurant groups and parent accounts</div>
-          </div>
-          <div class="view-actions">
-            <input class="search" id="account-search" placeholder="Search organizations..." oninput="acctSearch=this.value; renderAccounts()" />
-          </div>
-        </div>
-        <div class="content">
-          <div class="filters" id="stage-filters"></div>
-          <div class="rows" id="account-list"></div>
-        </div>
-      </section>
+    <!-- ORG DETAIL -->
+    <div id="view-detail" class="view">
+      <div class="detail-scroll" id="detail-content"></div>
+    </div>
 
-      <section class="view" id="view-tasks">
-        <div class="view-header">
-          <div>
-            <div class="view-title">Tasks</div>
-            <div class="view-sub">Open and recently completed action items</div>
-          </div>
-        </div>
-        <div class="content">
-          <div class="cols">
-            <div class="card">
-              <div class="card-head"><div class="card-title">Open tasks</div><div class="badge" id="open-task-count">0</div></div>
-              <div class="list" id="open-task-list"></div>
-            </div>
-            <div class="card">
-              <div class="card-head"><div class="card-title">Completed tasks</div><div class="badge" id="done-task-count">0</div></div>
-              <div class="list" id="done-task-list"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <!-- LOCATION DETAIL -->
+    <div id="view-loc-detail" class="view">
+      <div class="detail-scroll" id="loc-detail-content"></div>
+    </div>
 
-      <section class="view" id="view-detail">
-        <div class="content">
-          <div class="detail-wrap" id="detail-content"></div>
-        </div>
-      </section>
+    <!-- PIPELINE -->
+    <div id="view-pipeline" class="view">
+      <div class="view-header"><div><div class="view-title">Pipeline</div><div class="view-sub">Click cards to open account</div></div></div>
+      <div class="view-content" style="overflow-x:auto"><div class="kanban" id="kanban"></div></div>
+    </div>
 
-      <section class="view" id="view-location-detail">
-        <div class="content">
-          <div class="detail-wrap" id="location-detail-content"></div>
-        </div>
-      </section>
-    </main>
+    <!-- TASKS -->
+    <div id="view-tasks" class="view">
+      <div class="view-header"><div><div class="view-title">Tasks</div><div class="view-sub" id="tasks-sub"></div></div><div class="view-header-right"><button class="topbar-btn primary" onclick="openTaskModal()">+ Task</button></div></div>
+      <div class="view-content">
+        <div class="today-section"><div class="dp-header"><span class="dp-title">Open</span><span class="dp-count" id="tasks-open-count">0</span></div><div id="tasks-open-list"></div></div>
+        <div class="today-section" style="margin-top:1rem"><div class="dp-header"><span class="dp-title">Completed</span><span class="dp-count" id="tasks-done-count">0</span></div><div id="tasks-done-list"></div></div>
+      </div>
+    </div>
+
+    <!-- FOLLOW-UPS -->
+    <div id="view-followups" class="view">
+      <div class="view-header"><div><div class="view-title">Follow-Ups</div><div class="view-sub">Accounts with scheduled dates</div></div></div>
+      <div class="view-content"><div class="acct-list" id="fu-list"></div></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app-body -->
+
+<!-- FAB -->
+<button class="fab" id="fab-btn" onclick="openTaskModal()" style="display:none">+</button>
+
+<!-- ADD ACCOUNT MODAL -->
+<div class="modal-overlay" id="add-acct-modal">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title">Add Account</span><button class="modal-close" onclick="closeModal('add-acct-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Group Name *</label><input class="form-input" id="na-name" placeholder="e.g. Johnson Restaurant Group"></div>
+      <div class="form-group"><label class="form-label">Region</label>
+        <select class="form-select" id="na-region">
+          <option value="AL">S. Alabama</option><option value="FL">FL Panhandle</option><option value="MS">S. Mississippi</option><option value="LA">S. Louisiana</option><option value="OTHER">Other</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Locations</label><input class="form-input" id="na-locs" type="number" min="1" value="2"></div>
+      <div class="form-group"><label class="form-label">Tier</label>
+        <select class="form-select" id="na-tier">
+          <option value="ess">Essentials ($199/loc)</option><option value="pro" selected>Professional ($349/loc)</option><option value="ops">Operations ($499/loc)</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Key Contact</label><input class="form-input" id="na-contact" placeholder="Owner / GM name"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="na-phone" placeholder="(000) 000-0000"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="na-email" placeholder="email@example.com"></div>
+      <div class="form-group"><label class="form-label">Website</label><input class="form-input" id="na-website" placeholder="example.com"></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="na-notes" placeholder="Strategy, context, first move…"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('add-acct-modal')">Cancel</button><button class="btn btn-gold" onclick="submitAddAccount()">Add Account</button></div>
   </div>
+</div>
+
+<!-- ADD LOCATION MODAL -->
+<div class="modal-overlay" id="add-loc-modal">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title">Add Location</span><button class="modal-close" onclick="closeModal('add-loc-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Location Name *</label><input class="form-input" id="nl-name" placeholder="e.g. Kingfisher Fairhope"></div>
+      <div class="form-group"><label class="form-label">City</label><input class="form-input" id="nl-city" placeholder="e.g. Fairhope, AL"></div>
+      <div class="form-group"><label class="form-label">Tier</label>
+        <select class="form-select" id="nl-tier">
+          <option value="ess">Essentials ($199/mo)</option><option value="pro" selected>Professional ($349/mo)</option><option value="ops">Operations ($499/mo)</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">GM / Location Contact</label><input class="form-input" id="nl-contact" placeholder="GM name"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="nl-phone"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="nl-email"></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="nl-notes"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('add-loc-modal')">Cancel</button><button class="btn btn-gold" onclick="submitAddLocation()">Add Location</button></div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title">Add Task</span><button class="modal-close" onclick="closeModal('task-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Task *</label><input class="form-input" id="nt-title" placeholder="What needs to happen?"></div>
+      <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="nt-due" type="date"></div>
+      <div class="form-group"><label class="form-label">Priority</label>
+        <select class="form-select" id="nt-priority"><option value="high">High</option><option value="normal" selected>Normal</option><option value="low">Low</option></select></div>
+      <div class="form-group"><label class="form-label">Link to Account (optional)</label>
+        <select class="form-select" id="nt-account"><option value="">No linked account</option></select></div>
+      <div class="form-group"><label class="form-label">Note</label><textarea class="form-textarea" id="nt-note" placeholder="Optional context…" style="min-height:55px"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('task-modal')">Cancel</button><button class="btn btn-gold" onclick="submitAddTask()">Add Task</button></div>
+  </div>
+</div>
 
 <script>
-const SUPABASE_URL  = 'https://uzljkpbaefgkogrturoh.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6bGprcGJhZWZna29ncnR1cm9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyOTUwNzYsImV4cCI6MjA5MTg3MTA3Nn0.sJSBBgGcG5g25NE_i09ioZaTzBbR9sHNFN1QpyGyHXw';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+// ═══════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════
+const SUPA_URL  = 'https://uzljkpbaefgkogrturoh.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6bGprcGJhZWZna29ncnR1cm9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyOTUwNzYsImV4cCI6MjA5MTg3MTA3Nn0.sJSBBgGcG5g25NE_i09ioZaTzBbR9sHNFN1QpyGyHXw';
+const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
 
-let currentSession = null;
-let currentView = 'today';
-let currentAcctId = null;
-let currentLocationId = null;
-let acctSearch = '';
-let acctStage = 'all';
-
-let accounts = [];
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let accounts   = [];
 let activities = [];
-let tasks = [];
-let locations = [];
-let loadIssues = [];
+let locations  = [];
+let tasks      = [];
+let currentView     = 'today';
+let currentAcctId   = null;
+let currentLocId    = null;
+let acctSearch      = '';
+let acctStage       = 'all';
+let acctRegion      = 'all';
+let addLocOrgId     = null;
+let taskPrefillAcct = null;
 
+// ═══════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════
 const STAGES = [
-  {key:'all', label:'All'},
-  {key:'new', label:'New'},
-  {key:'contacted', label:'Contacted'},
-  {key:'demo', label:'Demo Scheduled'},
-  {key:'proposal', label:'Proposal Sent'},
-  {key:'won', label:'Closed Won'},
-  {key:'lost', label:'Closed Lost'}
+  {key:'new',       label:'New',            color:'#555'},
+  {key:'contacted', label:'Contacted',      color:'var(--blue)'},
+  {key:'demo',      label:'Demo Scheduled', color:'var(--purple)'},
+  {key:'proposal',  label:'Proposal Sent',  color:'var(--amber)'},
+  {key:'won',       label:'Closed Won',     color:'var(--green)'},
+  {key:'lost',      label:'Closed Lost',    color:'var(--red)'}
 ];
-const STAGE_CLASS = {
-  new:'s-new', contacted:'s-contacted', demo:'s-demo',
-  proposal:'s-proposal', won:'s-won', lost:'s-lost'
-};
-const TYPE_ICON = {call:'📞',email:'✉️',walkin:'🚶',demo:'🎥',note:'📝'};
-const TIER_PRICES = {ess:199, pro:349, ops:499};
+const TIER_PRICES   = {ess:199, pro:349, ops:499};
+const REGION_LABELS = {AL:'S. Alabama',FL:'FL Panhandle',MS:'S. Mississippi',LA:'S. Louisiana',OTHER:'Other'};
+const TYPE_ICON     = {call:'📞',email:'✉️',walkin:'🚶',demo:'📽️',note:'📝'};
+const TYPE_LABEL    = {call:'Call',email:'Email',walkin:'Walk-In',demo:'Demo',note:'Note'};
+const TYPE_CLS      = {call:'ae-call',email:'ae-email',walkin:'ae-walkin',demo:'ae-demo',note:'ae-note'};
 
-function log(...args){ console.log('[ESA CRM]', ...args); }
-function setLoading(msg){ document.getElementById('loading-screen').classList.remove('hidden'); document.getElementById('loading-msg').textContent = msg || 'Loading…'; }
-function hideLoading(){ document.getElementById('loading-screen').classList.add('hidden'); }
-function setAuthStatus(msg, good=false){
-  const el = document.getElementById('auth-status');
-  el.textContent = msg || '';
-  el.style.color = good ? 'var(--green)' : 'var(--muted)';
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function si(k){return STAGES.find(s=>s.key===k)||STAGES[0];}
+function fmt(n){return '$'+Math.round(n||0).toLocaleString();}
+function calcMRR(a){
+  const childLocs=locations.filter(l=>l.org_id===a.id);
+  if(childLocs.length) return childLocs.reduce((s,l)=>s+(TIER_PRICES[l.tier]||349),0);
+  const p=TIER_PRICES[a.tier]||349;const d=a.locs>=4?0.8:a.locs>=2?0.9:1;
+  return p*a.locs*d;
 }
-function setSyncState(state, msg){
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  dot.className = 'sync-dot' + (state==='syncing' ? ' syncing' : state==='error' ? ' error' : '');
-  lbl.textContent = msg || (state==='ok' ? 'Synced' : state==='error' ? 'Error' : 'Syncing…');
-}
-function showApp(){
-  document.getElementById('auth-screen').classList.add('hidden');
-  document.getElementById('topbar').classList.remove('hidden');
-  document.getElementById('app-body').classList.remove('hidden');
-}
-function showAuth(){
-  document.getElementById('auth-screen').classList.remove('hidden');
-  document.getElementById('topbar').classList.add('hidden');
-  document.getElementById('app-body').classList.add('hidden');
-}
-function today(){
-  const d = new Date();
-  return d.toISOString().slice(0,10);
-}
-function fmtDate(s){
-  if(!s) return '—';
-  const d = new Date(s + 'T00:00:00');
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-}
-function dayDiff(s){
-  if(!s) return null;
-  const d1 = new Date(today() + 'T00:00:00');
-  const d2 = new Date(s + 'T00:00:00');
-  if (Number.isNaN(d2.getTime())) return null;
-  return Math.round((d2 - d1) / 86400000);
-}
-function fuCls(s){
-  const d = dayDiff(s);
-  if (d === null) return 'none';
-  if (d < 0) return 'overdue';
-  if (d === 0) return 'today';
-  return 'ok';
-}
-function fuLabel(s){
-  const d = dayDiff(s);
-  if (d === null) return '—';
-  if (d < 0) return Math.abs(d) + 'd overdue';
-  if (d === 0) return 'Today';
-  if (d === 1) return 'Tomorrow';
-  return fmtDate(s);
-}
-function stageLabel(key){
-  return STAGES.find(s => s.key === key)?.label || key || 'Unknown';
-}
-function fmtMoney(n){
-  return '$' + Math.round(Number(n || 0)).toLocaleString();
-}
-function calcLocationMRR(loc){
-  return TIER_PRICES[loc?.tier] || 349;
-}
-function getLocationsForOrg(orgId){
-  return locations.filter(l => l.org_id === orgId);
-}
-function calcMRR(account){
-  const child = getLocationsForOrg(account.id);
-  if (child.length) return child.reduce((sum, l) => sum + calcLocationMRR(l), 0);
-  const p = TIER_PRICES[account.tier] || 349;
-  const locs = Number(account.locs || 1);
-  const d = locs >= 4 ? 0.8 : locs >= 2 ? 0.9 : 1;
-  return p * locs * d;
-}
-function safeText(v){ return (v ?? '').toString(); }
-function escapeHtml(str){
-  return safeText(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function issueHtml(){
-  if (!loadIssues.length) return '';
-  return `<div class="error-panel"><strong>Partial load:</strong> ${loadIssues.map(x => escapeHtml(x.step)).join(', ')}. Open the browser console for exact Supabase errors.</div>`;
-}
-function updateDebugStatus(){
-  const el = document.getElementById('debug-status');
-  if (!loadIssues.length){
-    el.textContent = 'No load issues detected. Dashboard, tasks, activities, and locations are synced.';
-    return;
-  }
-  el.innerHTML = `<strong style="color:#ffc2c2">Partial load detected.</strong><br>${loadIssues.map(x => `${escapeHtml(x.step)}: ${escapeHtml(x.message)}`).join('<br>')}`;
+function locMRR(l){return TIER_PRICES[l.tier]||349;}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function dayDiff(s){if(!s)return null;return Math.round((new Date(s+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);}
+function fmtDate(s){if(!s)return '';return new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fuCls(s){const d=dayDiff(s);if(d===null)return 'none';if(d<0)return 'overdue';if(d===0)return 'today';return 'ok';}
+function fuLabel(s){const d=dayDiff(s);if(d===null)return '—';if(d<0)return Math.abs(d)+'d overdue';if(d===0)return 'Today';if(d===1)return 'Tomorrow';return fmtDate(s);}
+function setSyncState(state,msg){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  if(!dot||!lbl)return;
+  dot.className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  lbl.textContent=msg||(state==='syncing'?'Syncing…':state==='error'?'Error':'Synced');
 }
 
-function dbToAccount(r){
-  return {
-    id: r.id,
-    name: r.name || 'Untitled organization',
-    region: r.region || '',
-    regionLabel: r.region_label || '',
-    locs: Number(r.locs || 1),
-    tier: r.tier || 'pro',
-    tierLabel: r.tier_label || '',
-    stage: r.stage || 'new',
-    contact: {
-      name: r.contact_name || '',
-      phone: r.contact_phone || '',
-      email: r.contact_email || ''
-    },
-    website: r.website || '',
-    locList: Array.isArray(r.loc_list) ? r.loc_list : [],
-    notes: r.notes || '',
-    followUp: r.follow_up || '',
-    created_at: r.created_at || null
-  };
-}
-function dbToActivity(r){
-  return {
-    id: r.id,
-    account_id: r.account_id || '',
-    type: r.type || 'note',
-    text: r.text || '',
-    created_at: r.created_at || null
-  };
-}
-function dbToTask(r){
-  return {
-    id: r.id,
-    title: r.title || 'Untitled task',
-    due: r.due || '',
-    status: r.status || 'open',
-    priority: r.priority || 'normal',
-    note: r.note || '',
-    account_id: r.account_id || '',
-    created_at: r.created_at || null
-  };
-}
-function dbToLocation(r){
-  return {
-    id: r.id,
-    org_id: r.org_id || '',
-    name: r.name || 'Untitled location',
-    city: r.city || '',
-    tier: r.tier || 'pro',
-    stage: r.stage || 'new',
-    contact_name: r.contact_name || '',
-    phone: r.phone || '',
-    email: r.email || '',
-    website: r.website || '',
-    notes: r.notes || '',
-    followUp: r.follow_up || '',
-    created_at: r.created_at || null
-  };
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+async function init(){
+  document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  setLoadMsg('Checking session…');
+
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      // User clicked the reset link — show the set-new-password form
+      showAuthScreen();
+      switchAuthMode('newpass');
+      return;
+    }
+    if(event==='SIGNED_IN'&&session) await onSignedIn(session.user);
+    if(event==='SIGNED_OUT') showAuthScreen();
+  });
+
+  const {data:{session}} = await sb.auth.getSession();
+  if(session) await onSignedIn(session.user);
+  else showAuthScreen();
 }
 
-async function safeStep(step, fn){
-  try{
-    log('Starting', step);
-    const result = await fn();
-    log('Success', step, result);
-    return {ok:true, result};
-  }catch(error){
-    const message = error?.message || String(error);
-    console.error('[ESA CRM] Failed', step, error);
-    loadIssues.push({step, message});
-    return {ok:false, error};
-  }
-}
-
-async function loadAccounts(){
-  const res = await sb.from('crm_accounts').select('*').order('created_at', {ascending:true});
-  if (res.error) throw res.error;
-  accounts = (res.data || []).map(dbToAccount);
-  return accounts.length;
-}
-async function loadActivities(){
-  const res = await sb.from('crm_activities').select('*').order('created_at', {ascending:false});
-  if (res.error) throw res.error;
-  activities = (res.data || []).map(dbToActivity);
-  return activities.length;
-}
-async function loadTasks(){
-  const res = await sb.from('crm_tasks').select('*').order('created_at', {ascending:false});
-  if (res.error) throw res.error;
-  tasks = (res.data || []).map(dbToTask);
-  return tasks.length;
-}
-async function loadLocations(){
-  const res = await sb.from('crm_locations').select('*').order('created_at', {ascending:true});
-  if (res.error) throw res.error;
-  locations = (res.data || []).map(dbToLocation);
-  return locations.length;
-}
-
-async function finishSignedInLoad(){
-  loadIssues = [];
+async function onSignedIn(user){
+  document.getElementById('topbar-user').textContent=user.email||'';
   showApp();
-  setLoading('Loading your pipeline…');
-  setSyncState('syncing', 'Loading…');
-
-  const { data: { user } } = await sb.auth.getUser();
-  document.getElementById('topbar-user').textContent = user?.email || '';
-  log('Active user', user?.email || null);
-
-  await safeStep('crm_accounts', loadAccounts);
-  await safeStep('crm_activities', loadActivities);
-  await safeStep('crm_tasks', loadTasks);
-  await safeStep('crm_locations', loadLocations);
-
-  setSyncState(loadIssues.length ? 'error' : 'ok', loadIssues.length ? 'Partial load' : 'Synced');
-  updateDebugStatus();
+  setLoadMsg('Loading your pipeline…');
+  await loadAll();
   hideLoading();
   renderAll();
 }
 
-async function init(){
-  setLoading('Checking session…');
-  sb.auth.onAuthStateChange((event, session) => {
-    currentSession = session || null;
-    log('Auth state change', event, session?.user?.email || null);
+function switchAuthMode(mode){
+  document.getElementById('auth-mode-login').style.display   = mode==='login'   ? '' : 'none';
+  document.getElementById('auth-mode-reset').style.display   = mode==='reset'   ? '' : 'none';
+  document.getElementById('auth-mode-newpass').style.display = mode==='newpass' ? '' : 'none';
+  // Clear all error messages when switching
+  ['auth-err','auth-reset-err','auth-newpass-err'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.textContent='';
   });
-
-  const { data: { session } } = await sb.auth.getSession();
-  currentSession = session || null;
-  if (!currentSession){
-    hideLoading();
-    showAuth();
-    return;
-  }
-  await finishSignedInLoad();
 }
 
-async function signIn(){
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  if (!email || !password){
-    setAuthStatus('Enter email and password.');
-    return;
+async function doSignIn(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  const errEl=document.getElementById('auth-err');
+  errEl.textContent='';
+  errEl.style.color='var(--red)';
+  if(!email){errEl.textContent='Please enter your email address.';return;}
+  if(!password){errEl.textContent='Please enter your password.';return;}
+  errEl.style.color='var(--wg)';
+  errEl.textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error){
+    errEl.style.color='var(--red)';
+    errEl.textContent=error.message==='Invalid login credentials'
+      ? 'Incorrect email or password. Use "Forgot password?" below if needed.'
+      : error.message;
   }
-  setAuthStatus('Signing in…');
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  if (error){
-    setAuthStatus(error.message);
-    return;
-  }
-  setAuthStatus('Signed in.', true);
-  await finishSignedInLoad();
 }
-async function sendMagicLink(){
-  const email = document.getElementById('auth-email').value.trim();
-  if (!email){
-    setAuthStatus('Enter your email first.');
-    return;
+
+async function doSendReset(){
+  const email=document.getElementById('auth-reset-email').value.trim();
+  const errEl=document.getElementById('auth-reset-err');
+  errEl.textContent='';
+  errEl.style.color='var(--red)';
+  if(!email){errEl.textContent='Please enter your email address.';return;}
+  errEl.style.color='var(--wg)';
+  errEl.textContent='Sending reset link…';
+  const {error}=await sb.auth.resetPasswordForEmail(email,{
+    redirectTo: window.location.href
+  });
+  if(error){
+    errEl.style.color='var(--red)';
+    errEl.textContent=error.message;
+  } else {
+    errEl.style.color='var(--green)';
+    errEl.textContent='✓ Reset link sent — check your email, click the link, then come back here to set your password.';
   }
-  const redirectTo = window.location.origin + window.location.pathname;
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
-  if (error){
-    setAuthStatus(error.message);
-    return;
-  }
-  setAuthStatus('Magic link sent.', true);
 }
-async function signOut(){
+
+async function doSetNewPassword(){
+  const pass=document.getElementById('auth-newpass').value;
+  const conf=document.getElementById('auth-newpass-confirm').value;
+  const errEl=document.getElementById('auth-newpass-err');
+  errEl.textContent='';
+  errEl.style.color='var(--red)';
+  if(!pass||pass.length<8){errEl.textContent='Password must be at least 8 characters.';return;}
+  if(pass!==conf){errEl.textContent='Passwords do not match.';return;}
+  errEl.style.color='var(--wg)';
+  errEl.textContent='Setting password…';
+  const {error}=await sb.auth.updateUser({password:pass});
+  if(error){
+    errEl.style.color='var(--red)';
+    errEl.textContent=error.message;
+  } else {
+    errEl.style.color='var(--green)';
+    errEl.textContent='✓ Password set! Signing you in…';
+    // Session is already active after updateUser — trigger onSignedIn
+    const {data:{session}}=await sb.auth.getSession();
+    if(session) await onSignedIn(session.user);
+  }
+}
+
+async function doSignOut(){
   await sb.auth.signOut();
-  showAuth();
-}
-async function manualRefresh(){
-  await finishSignedInLoad();
 }
 
-function showView(name, navEl=null){
-  currentView = name;
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  const viewEl = document.getElementById('view-' + name);
-  if (viewEl) viewEl.classList.add('active');
+function showApp(){
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('topbar').style.display='';
+  document.getElementById('app-body').style.display='';
+  document.getElementById('fab-btn').style.display='';
+}
 
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if (navEl) navEl.classList.add('active');
-  else {
-    const matched = document.querySelector(`.nav-item[data-view="${name}"]`);
-    if (matched) matched.classList.add('active');
+function showAuthScreen(){
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('topbar').style.display='none';
+  document.getElementById('app-body').style.display='none';
+  document.getElementById('fab-btn').style.display='none';
+}
+
+function setLoadMsg(msg){
+  document.getElementById('loading-screen').classList.remove('hidden');
+  document.getElementById('loading-msg').textContent=msg;
+}
+function hideLoading(){document.getElementById('loading-screen').classList.add('hidden');}
+
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+async function loadAll(){
+  setSyncState('syncing','Loading…');
+  try{
+    const [ar,actr,lr,tr]=await Promise.all([
+      sb.from('crm_accounts').select('*').order('created_at'),
+      sb.from('crm_activities').select('*').order('created_at',{ascending:false}),
+      sb.from('crm_locations').select('*').order('created_at'),
+      sb.from('crm_tasks').select('*').order('due',{ascending:true})
+    ]);
+    if(ar.data) accounts=ar.data.map(dbToAcct);
+    if(actr.data) activities=actr.data;
+    if(lr.data) locations=lr.data.map(dbToLoc);
+    if(tr.data) tasks=tr.data;
+    setSyncState('ok');
+  }catch(e){
+    console.error('loadAll error:',e);
+    setSyncState('error','Load failed');
   }
+}
 
+function dbToAcct(r){
+  return {
+    id:r.id, name:r.name, region:r.region, regionLabel:r.region_label||'',
+    locs:r.locs||1, tier:r.tier||'pro', tierLabel:r.tier_label||'Professional',
+    stage:r.stage||'new',
+    contact:{name:r.contact_name||'',phone:r.contact_phone||'',email:r.contact_email||''},
+    website:r.website||'', locList:r.loc_list||[], notes:r.notes||'',
+    followUp:r.follow_up||''
+  };
+}
+function dbToLoc(r){
+  return {
+    id:r.id, org_id:r.org_id, name:r.name||'', city:r.city||'',
+    tier:r.tier||'pro', stage:r.stage||'new',
+    contact_name:r.contact_name||'', phone:r.phone||'', email:r.email||'',
+    website:r.website||'', notes:r.notes||'', followUp:r.follow_up||''
+  };
+}
+function acctToDb(a){
+  return {
+    name:a.name, region:a.region, region_label:a.regionLabel,
+    locs:a.locs, tier:a.tier, tier_label:a.tierLabel, stage:a.stage,
+    contact_name:a.contact?.name||'', contact_phone:a.contact?.phone||'',
+    contact_email:a.contact?.email||'', website:a.website||'',
+    loc_list:a.locList||[], notes:a.notes||'', follow_up:a.followUp||null
+  };
+}
+function locToDb(l){
+  return {
+    org_id:l.org_id, name:l.name, city:l.city||'', tier:l.tier||'pro',
+    stage:l.stage||'new', contact_name:l.contact_name||'', phone:l.phone||'',
+    email:l.email||'', website:l.website||'', notes:l.notes||'',
+    follow_up:l.followUp||null
+  };
+}
+
+async function saveAcct(a){
+  setSyncState('syncing');
+  const {error}=await sb.from('crm_accounts').upsert({id:a.id,...acctToDb(a)});
+  setSyncState(error?'error':'ok');
+  if(error)console.error('saveAcct:',error);
+}
+async function saveLoc(l){
+  setSyncState('syncing');
+  const {error}=await sb.from('crm_locations').upsert({id:l.id,...locToDb(l)});
+  setSyncState(error?'error':'ok');
+  if(error)console.error('saveLoc:',error);
+}
+async function saveTask(t){
+  setSyncState('syncing');
+  const {error}=await sb.from('crm_tasks').upsert({
+    id:t.id, title:t.title, due:t.due||null, status:t.status,
+    priority:t.priority||'normal', note:t.note||'', account_id:t.account_id||null
+  });
+  setSyncState(error?'error':'ok');
+}
+async function insertActivity(acctId,type,text){
+  setSyncState('syncing');
+  const {data,error}=await sb.from('crm_activities').insert({account_id:acctId,type,text}).select().single();
+  setSyncState(error?'error':'ok');
+  if(data) activities.unshift(data);
+  return data;
+}
+async function deleteActivity(actId){
+  activities=activities.filter(x=>x.id!==actId);
+  await sb.from('crm_activities').delete().eq('id',actId);
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function showView(name,navEl){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(navEl) navEl.classList.add('active');
+  currentView=name;
+  closeSidebar();
   renderView(name);
 }
+
+function goToAcct(id){
+  currentAcctId=id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-detail').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  currentView='detail';
+  closeSidebar();
+  renderDetail(id);
+}
+
+function goToLoc(id){
+  currentLocId=id;
+  const loc=locations.find(l=>l.id===id);
+  if(loc) currentAcctId=loc.org_id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-loc-detail').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  currentView='loc-detail';
+  closeSidebar();
+  renderLocDetail(id);
+}
+
+function goBack(){
+  const acctNav=Array.from(document.querySelectorAll('.nav-item')).find(n=>n.textContent.includes('Accounts'));
+  showView('accounts',acctNav);
+}
+function goBackFromLoc(){
+  if(currentAcctId) goToAcct(currentAcctId);
+  else goBack();
+}
+
+function renderAll(){updateSidebar();renderView(currentView);}
 function renderView(name){
-  if (name === 'today') renderToday();
-  else if (name === 'dashboard') renderDashboard();
-  else if (name === 'accounts') renderAccounts();
-  else if (name === 'tasks') renderTasks();
-  else if (name === 'detail') renderDetail(currentAcctId);
-  else if (name === 'location-detail') renderLocationDetail(currentLocationId);
-}
-function renderAll(){
-  updateSidebar();
-  renderView(currentView);
-}
-function goToAccount(id){
-  currentAcctId = id;
-  currentView = 'detail';
-  showView('detail');
-}
-function goBackToAccounts(){
-  showView('accounts');
-}
-function goToLocation(id){
-  console.log('[NAV] requested location id', id);
-  console.log('[NAV] active org before nav', currentAcctId);
-  if (!id){
-    console.error('[NAV] missing location id');
-    return;
-  }
-  const loc = locations.find(x => x.id === id);
-  console.log('[NAV] clicked location object', loc);
-  if (!loc){
-    console.error('[NAV] location not found', { id, known: locations.map(x => x.id) });
-    return;
-  }
-  currentLocationId = id;
-  currentAcctId = loc.org_id || currentAcctId;
-  console.log('[NAV] target view', 'location-detail');
-  console.log('[NAV] org/location pair', { org_id: currentAcctId, location_id: currentLocationId });
-  showView('location-detail');
-}
-function goBackFromLocation(){
-  if (currentAcctId){
-    currentView = 'detail';
-    showView('detail');
-  } else {
-    showView('accounts');
-  }
+  if(name==='today') renderToday();
+  else if(name==='dashboard') renderDashboard();
+  else if(name==='accounts') renderAccounts();
+  else if(name==='pipeline') renderPipeline();
+  else if(name==='tasks') renderTasks();
+  else if(name==='followups') renderFollowUps();
+  else if(name==='detail'&&currentAcctId) renderDetail(currentAcctId);
+  else if(name==='loc-detail'&&currentLocId) renderLocDetail(currentLocId);
 }
 
+function toggleSidebar(){document.body.classList.toggle('sidebar-open');}
+function closeSidebar(){document.body.classList.remove('sidebar-open');}
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════
 function updateSidebar(){
-  const openTasks = tasks.filter(t => t.status !== 'done').length;
-  const dueItems = getTodayItems().length;
-  const totalMRR = accounts.reduce((sum, a) => sum + calcMRR(a), 0);
-  document.getElementById('nav-org-count').textContent = accounts.length;
-  document.getElementById('nav-task-count').textContent = openTasks;
-  document.getElementById('nav-today-count').textContent = dueItems;
-  document.getElementById('sidebar-mrr').textContent = fmtMoney(totalMRR);
-  document.getElementById('sidebar-sub').textContent = `${accounts.length} active organizations`;
-}
-function getTodayItems(){
-  const taskItems = tasks
-    .filter(t => t.status !== 'done' && dayDiff(t.due) !== null && dayDiff(t.due) <= 0)
-    .map(t => ({ kind:'task', id:t.id, title:t.title, due:t.due, account_id:t.account_id }));
-  const followItems = accounts
-    .filter(a => dayDiff(a.followUp) !== null && dayDiff(a.followUp) <= 0)
-    .map(a => ({ kind:'followup', id:a.id, title:a.name, due:a.followUp, account_id:a.id }));
-  const locationFollow = locations
-    .filter(l => dayDiff(l.followUp) !== null && dayDiff(l.followUp) <= 0)
-    .map(l => ({ kind:'location-followup', id:l.id, title:l.name, due:l.followUp, account_id:l.org_id }));
-  return [...taskItems, ...followItems, ...locationFollow]
-    .sort((a,b) => (a.due || '').localeCompare(b.due || ''));
+  document.getElementById('nav-accts-badge').textContent=accounts.length;
+  const urgFU=accounts.filter(a=>a.followUp&&dayDiff(a.followUp)<=0).length;
+  const urgT=tasks.filter(t=>t.status!=='done'&&t.due&&dayDiff(t.due)<=0).length;
+  const urg=urgFU+urgT;
+  const tb=document.getElementById('nav-today-badge');
+  if(urg>0){tb.textContent=urg;tb.style.display='';}else tb.style.display='none';
+
+  document.getElementById('sb-pipeline').innerHTML=STAGES.map(s=>{
+    const c=accounts.filter(a=>a.stage===s.key).length;
+    return `<div class="ps-row" onclick="acctStage='${s.key}';showView('accounts',document.querySelectorAll('.nav-item')[2])">
+      <div class="ps-dot" style="background:${s.color}"></div>
+      <span class="ps-name">${s.label}</span><span class="ps-count">${c}</span></div>`;
+  }).join('');
+
+  const wonMRR=accounts.filter(a=>a.stage==='won').reduce((s,a)=>s+calcMRR(a),0);
+  document.getElementById('sb-mrr').textContent=fmt(wonMRR)+'/mo';
+  document.getElementById('sb-arr').textContent=fmt(wonMRR*12)+'/yr';
 }
 
+// ═══════════════════════════════════════════════════
+// TODAY
+// ═══════════════════════════════════════════════════
 function renderToday(){
-  document.getElementById('today-errors').innerHTML = issueHtml();
-  const items = getTodayItems();
-  document.getElementById('today-due-count').textContent = items.length;
-  const dueList = document.getElementById('today-due-list');
-  if (!items.length){
-    dueList.innerHTML = '<div class="empty">Nothing overdue or due today.</div>';
-  } else {
-    dueList.innerHTML = items.map(item => {
-      const label = item.kind === 'task' ? 'Task'
-        : item.kind === 'location-followup' ? 'Location follow-up'
-        : 'Organization follow-up';
-      return `<div class="item">
-        <div class="item-main"><strong>${escapeHtml(item.title)}</strong> · ${escapeHtml(label)}</div>
-        <div class="item-meta">${escapeHtml(fuLabel(item.due))}</div>
+  const fuItems=accounts.filter(a=>a.followUp).map(a=>({kind:'fu',ref:a,due:a.followUp}));
+  const locFuItems=locations.filter(l=>l.followUp).map(l=>({kind:'loc-fu',ref:l,due:l.followUp}));
+  const taskItems=tasks.filter(t=>t.status!=='done'&&t.due).map(t=>({kind:'task',ref:t,due:t.due}));
+  const all=[...fuItems,...locFuItems,...taskItems];
+  const od=all.filter(x=>dayDiff(x.due)<0).sort((a,b)=>a.due.localeCompare(b.due));
+  const now=all.filter(x=>dayDiff(x.due)===0);
+  const up=all.filter(x=>{const d=dayDiff(x.due);return d>0&&d<=7;}).sort((a,b)=>a.due.localeCompare(b.due));
+
+  document.getElementById('today-stats').innerHTML=`
+    <div class="stat-card gold-card"><span class="sc-label">Urgent</span><span class="sc-val">${od.length+now.length}</span><span class="sc-sub">Overdue + today</span></div>
+    <div class="stat-card"><span class="sc-label">Overdue</span><span class="sc-val" style="color:${od.length?'var(--red)':'var(--wg)'}">${od.length}</span><span class="sc-sub">Past due</span></div>
+    <div class="stat-card"><span class="sc-label">Due Today</span><span class="sc-val" style="color:${now.length?'var(--amber)':'var(--wg)'}">${now.length}</span><span class="sc-sub">On the list today</span></div>
+    <div class="stat-card"><span class="sc-label">Next 7 Days</span><span class="sc-val" style="color:var(--green)">${up.length}</span><span class="sc-sub">Coming up</span></div>`;
+
+  document.getElementById('today-od-count').textContent=od.length;
+  document.getElementById('today-now-count').textContent=now.length;
+  document.getElementById('today-up-count').textContent=up.length;
+  document.getElementById('today-od').innerHTML=renderTodayItems(od)||'<div class="today-empty">Nothing overdue.</div>';
+  document.getElementById('today-now').innerHTML=renderTodayItems(now)||'<div class="today-empty">Nothing due today.</div>';
+  document.getElementById('today-up').innerHTML=renderTodayItems(up)||'<div class="today-empty">Nothing in the next 7 days.</div>';
+}
+
+function renderTodayItems(items){
+  return items.map(item=>{
+    if(item.kind==='task'){
+      const t=item.ref;
+      const linkedAcct=accounts.find(a=>a.id===t.account_id)||locations.find(l=>l.id===t.account_id);
+      const linkLabel=linkedAcct?linkedAcct.name:'';
+      const d=dayDiff(t.due);
+      return `<div class="today-item">
+        <div class="ti-body">
+          <div class="ti-name"><span class="task-priority ${t.priority||'normal'}">${t.priority||'normal'}</span>${t.title}</div>
+          <div class="ti-meta">${linkLabel?linkLabel+' · ':''}Due ${fmtDate(t.due)}${t.note?' · '+t.note:''}</div>
+          <div class="ti-actions">
+            ${t.account_id?`<button class="ti-btn" onclick="openLinkedItem('${t.account_id}')">Open</button>`:''}
+            <button class="ti-btn" onclick="markTaskDone('${t.id}')">Mark Done</button>
+          </div>
+        </div>
+        <div class="ti-date ${d<0?'overdue':d===0?'today':'upcoming'}">${d<0?Math.abs(d)+'d overdue':fuLabel(t.due)}</div>
       </div>`;
-    }).join('');
-  }
-
-  const openTasks = tasks.filter(t => t.status !== 'done').length;
-  const orgsWithLocations = accounts.filter(a => getLocationsForOrg(a.id).length).length;
-  const stats = [
-    ['Organizations', accounts.length],
-    ['Locations', locations.length],
-    ['Open Tasks', openTasks],
-    ['Recent Activities', activities.slice(0,10).length],
-  ];
-  document.getElementById('today-snapshot').innerHTML = stats.map(([k,v]) => `
-    <div class="field"><div style="min-width:140px"><b>${escapeHtml(k)}</b></div><div>${escapeHtml(String(v))}</div></div>
-  `).join('') + `
-  <div class="field"><div style="min-width:140px"><b>Multi-location orgs</b></div><div>${orgsWithLocations}</div></div>
-  <div class="field"><div style="min-width:140px"><b>Load state</b></div><div>${loadIssues.length ? 'Partial load' : 'Healthy'}</div></div>`;
+    }
+    if(item.kind==='loc-fu'){
+      const l=item.ref;
+      const org=accounts.find(a=>a.id===l.org_id);
+      const d=dayDiff(l.followUp);
+      return `<div class="today-item">
+        <div class="ti-body">
+          <div class="ti-name">${l.name}</div>
+          <div class="ti-meta">${org?org.name+' · ':''}${l.city||''}</div>
+          <div class="ti-actions">
+            <button class="ti-btn" onclick="goToLoc('${l.id}')">Open Location</button>
+            <button class="ti-btn" onclick="clearLocFollowUp('${l.id}')">Mark Done</button>
+          </div>
+        </div>
+        <div class="ti-date ${d<0?'overdue':d===0?'today':'upcoming'}">${d<0?Math.abs(d)+'d overdue':fuLabel(l.followUp)}</div>
+      </div>`;
+    }
+    const a=item.ref;
+    const sInfo=si(a.stage);
+    const d=dayDiff(a.followUp);
+    return `<div class="today-item">
+      <div class="ti-body">
+        <div class="ti-name">${a.name}</div>
+        <div class="ti-meta">${a.regionLabel} · ${sInfo.label} · ${fmt(calcMRR(a))}/mo</div>
+        <div class="ti-actions">
+          <button class="ti-btn" onclick="goToAcct('${a.id}')">Open</button>
+          <button class="ti-btn" onclick="clearAcctFollowUp('${a.id}')">Mark Done</button>
+          <button class="ti-btn" onclick="openTaskModal('${a.id}')">+ Task</button>
+        </div>
+      </div>
+      <div class="ti-date ${d<0?'overdue':d===0?'today':'upcoming'}">${d<0?Math.abs(d)+'d overdue':fuLabel(a.followUp)}</div>
+    </div>`;
+  }).join('');
 }
 
+async function clearAcctFollowUp(id){
+  const a=accounts.find(x=>x.id===id);if(!a)return;
+  a.followUp='';await saveAcct(a);renderAll();
+}
+async function clearLocFollowUp(id){
+  const l=locations.find(x=>x.id===id);if(!l)return;
+  l.followUp='';await saveLoc(l);renderAll();
+}
+function openLinkedItem(id){
+  if(locations.find(l=>l.id===id)) goToLoc(id);
+  else goToAcct(id);
+}
+
+// ═══════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════
 function renderDashboard(){
-  document.getElementById('dashboard-errors').innerHTML = issueHtml();
+  const totalMRR=accounts.reduce((s,a)=>s+calcMRR(a),0);
+  const wonMRR=accounts.filter(a=>a.stage==='won').reduce((s,a)=>s+calcMRR(a),0);
+  const od=accounts.filter(a=>a.followUp&&dayDiff(a.followUp)<0).length;
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card gold-card"><span class="sc-label">Pipeline Potential</span><span class="sc-val">${fmt(totalMRR)}</span><span class="sc-sub">${accounts.length} accounts</span></div>
+    <div class="stat-card"><span class="sc-label">Won MRR</span><span class="sc-val" style="color:var(--green)">${fmt(wonMRR)}</span><span class="sc-sub">${fmt(wonMRR*12)}/year</span></div>
+    <div class="stat-card"><span class="sc-label">Active</span><span class="sc-val">${accounts.filter(a=>a.stage!=='lost').length}</span><span class="sc-sub">of ${accounts.length} total</span></div>
+    <div class="stat-card"><span class="sc-label">Overdue</span><span class="sc-val" style="color:${od?'var(--red)':'var(--wg)'}">${od}</span><span class="sc-sub">Follow-ups past due</span></div>`;
 
-  const won = accounts.filter(a => a.stage === 'won').length;
-  const openTasks = tasks.filter(t => t.status !== 'done').length;
-  const totalMRR = accounts.reduce((sum, a) => sum + calcMRR(a), 0);
-  const cards = [
-    {label:'Organizations', value:accounts.length, sub:'Parent organizations tracked'},
-    {label:'Locations', value:locations.length, sub:'Child locations synced'},
-    {label:'Open Tasks', value:openTasks, sub:'Action items not marked done'},
-    {label:'Pipeline MRR', value:fmtMoney(totalMRR), sub:`${won} closed won organizations`, gold:true}
-  ];
-  document.getElementById('dashboard-stats').innerHTML = cards.map(c => `
-    <div class="card ${c.gold ? 'gold' : ''}">
-      <div class="card-pad">
-        <div class="stat-label">${escapeHtml(c.label)}</div>
-        <div class="stat-value">${escapeHtml(String(c.value))}</div>
-        <div class="stat-sub">${escapeHtml(c.sub)}</div>
-      </div>
-    </div>
-  `).join('');
+  const fuA=accounts.filter(a=>a.followUp).sort((a,b)=>a.followUp.localeCompare(b.followUp));
+  document.getElementById('dp-fu-count').textContent=fuA.length;
+  document.getElementById('dp-followups').innerHTML=fuA.length?fuA.slice(0,8).map(a=>{
+    const c=fuCls(a.followUp);
+    return `<div class="followup-item" onclick="goToAcct('${a.id}')">
+      <div class="fi-dot ${c}"></div><span class="fi-name">${a.name}</span>
+      <span class="fi-date ${c}">${fuLabel(a.followUp)}</span></div>`;
+  }).join(''):'<div style="padding:1.2rem;text-align:center;font-size:0.76rem;color:var(--wg)">No follow-ups scheduled</div>';
 
-  const recent = activities.slice(0,12);
-  document.getElementById('activity-count').textContent = recent.length;
-  document.getElementById('recent-activity').innerHTML = recent.length ? recent.map(a => {
-    const account = accounts.find(x => x.id === a.account_id) || locations.find(x => x.id === a.account_id);
-    return `<div class="item">
-      <div class="item-main">${TYPE_ICON[a.type] || '📝'} <strong>${escapeHtml(account?.name || 'Unknown')}</strong> · ${escapeHtml(a.text || '')}</div>
-      <div class="item-meta">${escapeHtml(a.created_at ? new Date(a.created_at).toLocaleString() : 'No timestamp')}</div>
-    </div>`;
-  }).join('') : '<div class="empty">No recent activity found.</div>';
+  document.getElementById('dp-act-count').textContent=activities.length+' total';
+  document.getElementById('dp-activity').innerHTML=activities.length?activities.slice(0,8).map(act=>{
+    const a=accounts.find(x=>x.id===act.account_id)||locations.find(x=>x.id===act.account_id);
+    return `<div class="activity-item">
+      <span class="ai-icon">${TYPE_ICON[act.type]||'📝'}</span>
+      <div class="ai-content">
+        <div class="ai-main"><strong>${a?a.name:'Unknown'}</strong> — ${act.text}</div>
+        <div class="ai-date">${fmtDate(act.created_at?.split('T')[0])}</div>
+      </div></div>`;
+  }).join(''):'<div style="padding:1.2rem;text-align:center;font-size:0.76rem;color:var(--wg)">No activity yet</div>';
 
-  const followups = [
-    ...accounts.filter(a => a.followUp).map(a => ({name:a.name, due:a.followUp, click:`goToAccount('${a.id}')`})),
-    ...locations.filter(l => l.followUp).map(l => ({name:l.name, due:l.followUp, click:`goToLocation('${l.id}')`}))
-  ].sort((a,b) => (a.due || '').localeCompare(b.due || '')).slice(0,12);
-
-  document.getElementById('followup-count').textContent = followups.length;
-  document.getElementById('dashboard-followups').innerHTML = followups.length ? followups.map(f => `
-    <div class="item" onclick="${f.click}" style="cursor:pointer">
-      <div class="item-main"><strong>${escapeHtml(f.name)}</strong></div>
-      <div class="item-meta">${escapeHtml(fuLabel(f.due))}</div>
-    </div>
-  `).join('') : '<div class="empty">No follow-ups scheduled.</div>';
+  const tot=accounts.length||1;
+  document.getElementById('dp-bars').innerHTML=STAGES.map(s=>{
+    const c=accounts.filter(a=>a.stage===s.key).length;
+    return `<div class="pb-row"><span class="pb-label">${s.label}</span>
+      <div class="pb-track"><div class="pb-fill" id="pbf-${s.key}" style="background:${s.color}"></div></div>
+      <span class="pb-num">${c}</span></div>`;
+  }).join('');
+  setTimeout(()=>STAGES.forEach(s=>{
+    const el=document.getElementById('pbf-'+s.key);
+    if(el) el.style.width=Math.round(accounts.filter(a=>a.stage===s.key).length/tot*100)+'%';
+  }),50);
 }
 
-function renderStageFilters(){
-  const holder = document.getElementById('stage-filters');
-  holder.innerHTML = STAGES.map(s => `
-    <button class="pill ${acctStage === s.key ? 'active' : ''}" onclick="acctStage='${s.key}'; renderAccounts()">${escapeHtml(s.label)}</button>
-  `).join('');
-}
+// ═══════════════════════════════════════════════════
+// ACCOUNTS LIST
+// ═══════════════════════════════════════════════════
 function renderAccounts(){
-  renderStageFilters();
-  let rows = [...accounts];
-  if (acctSearch.trim()){
-    const q = acctSearch.trim().toLowerCase();
-    rows = rows.filter(a =>
-      a.name.toLowerCase().includes(q) ||
-      safeText(a.contact?.name).toLowerCase().includes(q) ||
-      safeText(a.contact?.email).toLowerCase().includes(q)
-    );
-  }
-  if (acctStage !== 'all'){
-    rows = rows.filter(a => a.stage === acctStage);
-  }
-  rows.sort((a,b) => a.name.localeCompare(b.name));
+  const regions=[...new Set(accounts.map(a=>a.region))];
+  let fh='<span style="font-size:0.6rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold-d)">Stage</span>';
+  fh+=`<button class="fbtn ${acctStage==='all'?'active':''}" onclick="acctStage='all';renderAccounts()">All</button>`;
+  STAGES.forEach(s=>{fh+=`<button class="fbtn ${acctStage===s.key?'active':''}" onclick="acctStage='${s.key}';renderAccounts()">${s.label}</button>`;});
+  fh+='<div class="fbtn-sep"></div><span style="font-size:0.6rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold-d)">Region</span>';
+  fh+=`<button class="fbtn ${acctRegion==='all'?'active':''}" onclick="acctRegion='all';renderAccounts()">All</button>`;
+  regions.forEach(r=>{fh+=`<button class="fbtn ${acctRegion===r?'active':''}" onclick="acctRegion='${r}';renderAccounts()">${REGION_LABELS[r]||r}</button>`;});
+  document.getElementById('acct-filters').innerHTML=fh;
 
-  const holder = document.getElementById('account-list');
-  if (!rows.length){
-    holder.innerHTML = '<div class="empty card">No organizations match your filters.</div>';
-    return;
-  }
-  holder.innerHTML = rows.map(a => `
-    <div class="row-card stage-${escapeHtml(a.stage)}" onclick="goToAccount('${a.id}')">
-      <div>
-        <div class="row-name">${escapeHtml(a.name)}</div>
-        <div class="row-meta">${escapeHtml(a.regionLabel || a.region || 'No region')} · ${escapeHtml(a.contact?.name || 'No contact')} · ${getLocationsForOrg(a.id).length || a.locs || 0} locations</div>
-      </div>
-      <div><span class="stage ${STAGE_CLASS[a.stage] || 's-new'}">${escapeHtml(stageLabel(a.stage))}</span></div>
-      <div class="money">${escapeHtml(fmtMoney(calcMRR(a)))}/mo</div>
-      <div class="followup ${fuCls(a.followUp)}">${escapeHtml(fuLabel(a.followUp))}</div>
-    </div>
-  `).join('');
+  let data=accounts;
+  if(acctStage!=='all') data=data.filter(a=>a.stage===acctStage);
+  if(acctRegion!=='all') data=data.filter(a=>a.region===acctRegion);
+  if(acctSearch){const q=acctSearch.toLowerCase();data=data.filter(a=>a.name.toLowerCase().includes(q)||(a.contact?.name||'').toLowerCase().includes(q));}
+  document.getElementById('accts-sub').textContent=`${data.length} of ${accounts.length} groups`;
+  document.getElementById('acct-list').innerHTML=data.length?data.map(a=>{
+    const sInfo=si(a.stage);const fc=fuCls(a.followUp);const mrr=calcMRR(a);
+    return `<div class="acct-card stage-${a.stage}" onclick="goToAcct('${a.id}')">
+      <div><div class="ac-name">${a.name}</div><div class="ac-meta">${a.regionLabel} · ${locations.filter(l=>l.org_id===a.id).length||a.locs} loc · ${a.tierLabel}</div></div>
+      <span class="ac-stage s-${a.stage}">${sInfo.label}</span>
+      <div class="ac-mrr">${fmt(mrr)}/mo<small>${fmt(mrr*12)}/yr</small></div>
+      <div class="ac-followup ${fc}">${a.followUp?fuLabel(a.followUp):'—'}</div></div>`;
+  }).join(''):'<div style="padding:2rem;text-align:center;color:var(--wg)">No accounts match your filters</div>';
 }
 
-function renderTasks(){
-  const open = tasks.filter(t => t.status !== 'done').sort((a,b) => (a.due || '').localeCompare(b.due || ''));
-  const done = tasks.filter(t => t.status === 'done').sort((a,b) => (b.due || '').localeCompare(a.due || '')).slice(0,20);
-
-  document.getElementById('open-task-count').textContent = open.length;
-  document.getElementById('done-task-count').textContent = done.length;
-
-  document.getElementById('open-task-list').innerHTML = open.length ? open.map(t => {
-    const linked = accounts.find(a => a.id === t.account_id) || locations.find(l => l.id === t.account_id);
-    return `<div class="item">
-      <div class="item-main"><strong>${escapeHtml(t.title)}</strong></div>
-      <div class="item-meta">${escapeHtml(fuLabel(t.due))} · ${escapeHtml(linked?.name || 'Unlinked')} · ${escapeHtml(t.priority)}</div>
-    </div>`;
-  }).join('') : '<div class="empty">No open tasks.</div>';
-
-  document.getElementById('done-task-list').innerHTML = done.length ? done.map(t => `
-    <div class="item">
-      <div class="item-main"><strong>${escapeHtml(t.title)}</strong></div>
-      <div class="item-meta">Completed · ${escapeHtml(fmtDate(t.due))}</div>
-    </div>
-  `).join('') : '<div class="empty">No completed tasks yet.</div>';
-}
-
-function renderOrgLocations(orgId){
-  const orgLocs = getLocationsForOrg(orgId);
-  if (!orgLocs.length) return '<div class="empty">No locations found for this organization.</div>';
-  return orgLocs.map(l => `
-    <div class="location-row">
-      <div>
-        <div class="location-name">${escapeHtml(l.name)}</div>
-        <div class="location-meta">${escapeHtml(l.city || 'No city set')} · ${escapeHtml(stageLabel(l.stage))} · ${(l.tier || 'pro').toUpperCase()}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:.7rem">
-        <div class="money">${escapeHtml(fmtMoney(calcLocationMRR(l)))}/mo</div>
-        <button class="btn" onclick="event.stopPropagation(); goToLocation('${l.id}')">Open</button>
-      </div>
-    </div>
-  `).join('');
-}
-
+// ═══════════════════════════════════════════════════
+// ORG DETAIL
+// ═══════════════════════════════════════════════════
 function renderDetail(id){
-  const account = accounts.find(a => a.id === id);
-  const holder = document.getElementById('detail-content');
-  if (!account){
-    holder.innerHTML = `<div class="card"><div class="card-pad"><div class="back" onclick="goBackToAccounts()">← Back</div><div class="empty">Organization not found.</div></div></div>`;
-    return;
-  }
-  const acts = activities.filter(a => a.account_id === id).slice(0,20);
-  const orgTasks = tasks.filter(t => t.account_id === id && t.status !== 'done').slice(0,20);
+  const a=accounts.find(x=>x.id===id);
+  if(!a){document.getElementById('detail-content').innerHTML='<div style="padding:2rem;color:var(--wg)">Account not found.</div>';return;}
+  const mrr=calcMRR(a);
+  const disc=a.locs>=4?'20%':a.locs>=2?'10%':'0%';
+  const sInfo=si(a.stage);
+  const orgLocs=locations.filter(l=>l.org_id===id);
+  const orgActs=activities.filter(x=>x.account_id===id);
 
-  holder.innerHTML = `
-    <div class="back" onclick="goBackToAccounts()">← Back to organizations</div>
-    <div class="detail-head">
-      <div>
-        <div class="detail-name">${escapeHtml(account.name)}</div>
-        <div class="detail-sub">${escapeHtml(account.regionLabel || account.region || 'No region')} · ${escapeHtml(account.contact?.name || 'No contact')} · ${escapeHtml(account.contact?.email || '')}</div>
-        <div style="margin-top:.55rem"><span class="stage ${STAGE_CLASS[account.stage] || 's-new'}">${escapeHtml(stageLabel(account.stage))}</span></div>
-      </div>
-      <div class="detail-kpis">
-        <div class="detail-money">${escapeHtml(fmtMoney(calcMRR(account)))}/mo</div>
-        <div class="small">${escapeHtml(fmtMoney(calcMRR(account) * 12))}/yr</div>
-      </div>
-    </div>
+  const locRows=orgLocs.length?orgLocs.map((l,i)=>{
+    const lsi=si(l.stage);
+    return `<div class="loc-row" onclick="goToLoc('${l.id}')">
+      <span class="loc-num">${i+1}</span>
+      <div style="flex:1"><div class="loc-name">${l.name}</div><div class="loc-meta">${l.city||''}${l.city?' · ':''}${lsi.label}</div></div>
+      <span class="loc-meta">${fmt(locMRR(l))}/mo</span>
+      <button class="loc-open" onclick="event.stopPropagation();goToLoc('${l.id}')">Open →</button>
+    </div>`;
+  }).join(''):(a.locList||[]).length?(a.locList||[]).map((ln,i)=>`<div class="loc-row"><span class="loc-num">${i+1}</span><div class="loc-name">${ln}</div></div>`).join(''):'<div class="act-empty">No locations added yet.</div>';
 
-    <div class="detail-grid">
-      <div class="card">
-        <div class="card-head"><div class="card-title">Organization details</div></div>
-        <div class="card-pad">
-          <div class="field"><div style="min-width:120px"><b>Website</b></div><div>${account.website ? `<a class="linkish" href="${escapeHtml(account.website)}" target="_blank">${escapeHtml(account.website)}</a>` : '—'}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Phone</b></div><div>${escapeHtml(account.contact?.phone || '—')}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Follow-up</b></div><div class="followup ${fuCls(account.followUp)}">${escapeHtml(fuLabel(account.followUp))}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Notes</b></div><div>${escapeHtml(account.notes || '—')}</div></div>
+  const actEntries=orgActs.length?orgActs.map(act=>`<div class="act-entry">
+    <span class="ae-type ${TYPE_CLS[act.type]||'ae-note'}">${TYPE_LABEL[act.type]||'Note'}</span>
+    <div class="ae-body"><div class="ae-text">${act.text}</div><div class="ae-date">${fmtDate(act.created_at?.split('T')[0])}</div></div>
+    <span class="ae-del" onclick="delActivity('${act.id}','${id}')">✕</span>
+  </div>`).join(''):'<div class="act-empty">No activity logged yet.</div>';
+
+  document.getElementById('detail-content').innerHTML=`
+    <div class="dv-back" onclick="goBack()">← Back to Accounts</div>
+    <div class="dv-header-row">
+      <div style="flex:1">
+        <div class="dv-name">${a.name}</div>
+        <div class="dv-region">${a.regionLabel} · ${orgLocs.length||a.locs} location${(orgLocs.length||a.locs)>1?'s':''} · ${a.tierLabel} Tier</div>
+        <div class="dv-badges">
+          <span class="ac-stage s-${a.stage}">${sInfo.label}</span>
+          <span style="font-size:0.65rem;color:var(--gold-d)">${disc} Founder Discount</span>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Locations</div><div class="badge">${getLocationsForOrg(account.id).length}</div></div>
-        <div class="card-pad">${renderOrgLocations(account.id)}</div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Open tasks</div><div class="badge">${orgTasks.length}</div></div>
-        <div class="list">${orgTasks.length ? orgTasks.map(t => `
-          <div class="item">
-            <div class="item-main"><strong>${escapeHtml(t.title)}</strong></div>
-            <div class="item-meta">${escapeHtml(fuLabel(t.due))} · ${escapeHtml(t.priority)}</div>
-          </div>
-        `).join('') : '<div class="empty">No open tasks linked to this organization.</div>'}</div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Recent activity</div><div class="badge">${acts.length}</div></div>
-        <div class="list">${acts.length ? acts.map(a => `
-          <div class="item">
-            <div class="item-main">${TYPE_ICON[a.type] || '📝'} ${escapeHtml(a.text)}</div>
-            <div class="item-meta">${escapeHtml(a.created_at ? new Date(a.created_at).toLocaleString() : 'No timestamp')}</div>
-          </div>
-        `).join('') : '<div class="empty">No activity linked to this organization.</div>'}</div>
-      </div>
-    </div>
-  `;
-}
-
-function renderLocationDetail(id){
-  const holder = document.getElementById('location-detail-content');
-  if (!id){
-    console.error('[LOCATION DETAIL] missing id');
-    holder.innerHTML = `<div class="card"><div class="card-pad"><div class="back" onclick="goBackFromLocation()">← Back</div><div class="empty">Missing location id.</div></div></div>`;
-    return;
-  }
-  const loc = locations.find(x => x.id === id);
-  if (!loc){
-    console.error('[LOCATION DETAIL] location not found', {id, known: locations.map(x => x.id)});
-    holder.innerHTML = `<div class="card"><div class="card-pad"><div class="back" onclick="goBackFromLocation()">← Back</div><div class="empty">Location not found.</div></div></div>`;
-    return;
-  }
-  const org = accounts.find(a => a.id === loc.org_id);
-  const locActs = activities.filter(a => a.account_id === id).slice(0,20);
-  const locTasks = tasks.filter(t => t.account_id === id && t.status !== 'done').slice(0,20);
-  console.log('[LOCATION DETAIL] rendering', loc);
-
-  holder.innerHTML = `
-    <div class="back" onclick="goBackFromLocation()">← Back to ${escapeHtml(org?.name || 'organization')}</div>
-    <div class="detail-head">
-      <div>
-        <div class="detail-name">${escapeHtml(loc.name)}</div>
-        <div class="detail-sub">${escapeHtml(org?.name || 'Unknown organization')} · ${escapeHtml(loc.city || 'No city set')}</div>
-        <div style="margin-top:.55rem"><span class="stage ${STAGE_CLASS[loc.stage] || 's-new'}">${escapeHtml(stageLabel(loc.stage))}</span></div>
-      </div>
-      <div class="detail-kpis">
-        <div class="detail-money">${escapeHtml(fmtMoney(calcLocationMRR(loc)))}/mo</div>
-        <div class="small">${escapeHtml(fmtMoney(calcLocationMRR(loc) * 12))}/yr</div>
-      </div>
+      <div class="dv-mrr-block"><div class="dv-mrr">${fmt(mrr)}/mo</div><div class="dv-arr">${fmt(mrr*12)}/yr</div></div>
     </div>
 
-    <div class="detail-grid">
-      <div class="card">
-        <div class="card-head"><div class="card-title">Location details</div></div>
-        <div class="card-pad">
-          <div class="field"><div style="min-width:120px"><b>Organization</b></div><div>${escapeHtml(org?.name || '—')}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Contact</b></div><div>${escapeHtml(loc.contact_name || '—')}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Email</b></div><div>${escapeHtml(loc.email || '—')}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Phone</b></div><div>${escapeHtml(loc.phone || '—')}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Website</b></div><div>${loc.website ? `<a class="linkish" href="${escapeHtml(loc.website)}" target="_blank">${escapeHtml(loc.website)}</a>` : '—'}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Follow-up</b></div><div class="followup ${fuCls(loc.followUp)}">${escapeHtml(fuLabel(loc.followUp))}</div></div>
-          <div class="field"><div style="min-width:120px"><b>Notes</b></div><div>${escapeHtml(loc.notes || '—')}</div></div>
+    <div class="quick-actions">
+      <button class="qa-btn" onclick="openAddLocModal('${id}')">+ Location</button>
+      <button class="qa-btn" onclick="openTaskModal('${id}')">+ Task</button>
+      <button class="qa-btn" onclick="logActivityFocus('act-text-${id}')">+ Activity</button>
+    </div>
+
+    <div class="dv-grid">
+      <div class="dv-panel" style="margin-bottom:0">
+        <div class="dvp-hdr"><span class="dvp-title">Contact</span></div>
+        <div class="dvp-body">
+          <div class="dvp-row"><span class="dvp-icon">👤</span><span class="dvp-val"><strong>${a.contact?.name||'—'}</strong></span></div>
+          <div class="dvp-row"><span class="dvp-icon">📞</span><span class="dvp-val">${a.contact?.phone||'—'}</span></div>
+          <div class="dvp-row"><span class="dvp-icon">✉️</span><span class="dvp-val">${a.contact?.email||'—'}</span></div>
+          <div class="dvp-row"><span class="dvp-icon">🌐</span><span class="dvp-val">${a.website?`<a href="https://${a.website.replace(/^https?:\/\//,'')}" target="_blank">${a.website}</a>`:'—'}</span></div>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Open tasks</div><div class="badge">${locTasks.length}</div></div>
-        <div class="list">${locTasks.length ? locTasks.map(t => `
-          <div class="item">
-            <div class="item-main"><strong>${escapeHtml(t.title)}</strong></div>
-            <div class="item-meta">${escapeHtml(fuLabel(t.due))} · ${escapeHtml(t.priority)}</div>
-          </div>
-        `).join('') : '<div class="empty">No open tasks linked to this location.</div>'}</div>
-      </div>
-
-      <div class="card" style="grid-column:1 / -1">
-        <div class="card-head"><div class="card-title">Recent activity</div><div class="badge">${locActs.length}</div></div>
-        <div class="list">${locActs.length ? locActs.map(a => `
-          <div class="item">
-            <div class="item-main">${TYPE_ICON[a.type] || '📝'} ${escapeHtml(a.text)}</div>
-            <div class="item-meta">${escapeHtml(a.created_at ? new Date(a.created_at).toLocaleString() : 'No timestamp')}</div>
-          </div>
-        `).join('') : '<div class="empty">No activity linked to this location.</div>'}</div>
+      <div class="dv-panel" style="margin-bottom:0">
+        <div class="dvp-hdr"><span class="dvp-title">Locations</span><button class="loc-open" onclick="openAddLocModal('${id}')">+ Add</button></div>
+        <div class="dvp-body" style="padding:0.4rem 0.9rem">${locRows}</div>
       </div>
     </div>
-  `;
+
+    <div class="dv-panel">
+      <div class="dvp-hdr"><span class="dvp-title">Pipeline Stage</span><span style="font-size:0.62rem;color:var(--wg)">Click to update</span></div>
+      <div class="dvp-body"><div class="stage-editor">
+        ${STAGES.map(s=>`<button class="stage-opt ${a.stage===s.key?'sel-'+s.key:''}" onclick="setAcctStage('${id}','${s.key}',this)">${s.label}</button>`).join('')}
+      </div></div>
+    </div>
+
+    <div class="dv-panel">
+      <div class="dvp-hdr"><span class="dvp-title">Follow-Up Date</span></div>
+      <div class="dvp-body"><div class="fu-row">
+        <input type="date" class="fu-input" id="fu-${id}" value="${a.followUp||''}" onchange="setAcctFollowUp('${id}',this.value)">
+        ${a.followUp?`<button class="fu-clr" onclick="setAcctFollowUp('${id}','')">Clear</button><span class="fu-label">${fuLabel(a.followUp)}</span>`:''}
+      </div></div>
+    </div>
+
+    <div class="act-log">
+      <div class="act-add">
+        <select class="act-type-sel" id="act-type-${id}">
+          <option value="call">Call</option><option value="email">Email</option>
+          <option value="walkin">Walk-In</option><option value="demo">Demo</option><option value="note">Note</option>
+        </select>
+        <input class="act-text-inp" id="act-text-${id}" placeholder="Log what happened…" onkeydown="if(event.key==='Enter'){event.preventDefault();logAct('${id}')}">
+        <button class="act-log-btn" onclick="logAct('${id}')">Log</button>
+      </div>
+      <div class="act-entries" id="act-entries-${id}">${actEntries}</div>
+    </div>
+
+    <div class="notes-panel">
+      <div class="dvp-hdr"><span class="dvp-title">Notes</span></div>
+      <textarea class="notes-ta" id="notes-${id}" placeholder="Strategy, intel, next moves…">${a.notes||''}</textarea>
+      <div class="notes-footer">
+        <span class="notes-status" id="notes-status-${id}"></span>
+        <button class="notes-save-btn" onclick="saveNotes('${id}')">Save Notes</button>
+      </div>
+    </div>`;
 }
 
-window.addEventListener('load', init);
+// ═══════════════════════════════════════════════════
+// LOCATION DETAIL
+// ═══════════════════════════════════════════════════
+function renderLocDetail(id){
+  const l=locations.find(x=>x.id===id);
+  if(!l){document.getElementById('loc-detail-content').innerHTML='<div style="padding:2rem;color:var(--wg)">Location not found.</div>';return;}
+  const org=accounts.find(a=>a.id===l.org_id);
+  const sInfo=si(l.stage);
+  const locActs=activities.filter(x=>x.account_id===id);
+  const locTasks=tasks.filter(t=>t.status!=='done'&&t.account_id===id);
+
+  const actEntries=locActs.length?locActs.map(act=>`<div class="act-entry">
+    <span class="ae-type ${TYPE_CLS[act.type]||'ae-note'}">${TYPE_LABEL[act.type]||'Note'}</span>
+    <div class="ae-body"><div class="ae-text">${act.text}</div><div class="ae-date">${fmtDate(act.created_at?.split('T')[0])}</div></div>
+    <span class="ae-del" onclick="delActivity('${act.id}','${id}',true)">✕</span>
+  </div>`).join(''):'<div class="act-empty">No activity logged for this location yet.</div>';
+
+  const taskRows=locTasks.length?locTasks.map(t=>`<div class="today-item">
+    <div class="ti-body">
+      <div class="ti-name"><span class="task-priority ${t.priority||'normal'}">${t.priority||'normal'}</span>${t.title}</div>
+      <div class="ti-meta">Due ${fmtDate(t.due)}${t.note?' · '+t.note:''}</div>
+      <div class="ti-actions"><button class="ti-btn" onclick="markTaskDone('${t.id}')">Mark Done</button></div>
+    </div>
+    <div class="ti-date ${dayDiff(t.due)<0?'overdue':dayDiff(t.due)===0?'today':'upcoming'}">${fuLabel(t.due)}</div>
+  </div>`).join(''):'<div class="today-empty">No open tasks.</div>';
+
+  document.getElementById('loc-detail-content').innerHTML=`
+    <div class="dv-back" onclick="goBackFromLoc()">← Back to ${org?org.name:'Organization'}</div>
+    <div class="dv-header-row">
+      <div style="flex:1">
+        <div class="dv-name">${l.name}</div>
+        <div class="dv-region">${org?org.name+' · ':''}${l.city||'No city set'} · ${(l.tier||'pro').toUpperCase()} Tier</div>
+        <div class="dv-badges"><span class="ac-stage s-${l.stage}">${sInfo.label}</span></div>
+      </div>
+      <div class="dv-mrr-block"><div class="dv-mrr">${fmt(locMRR(l))}/mo</div><div class="dv-arr">${fmt(locMRR(l)*12)}/yr</div></div>
+    </div>
+
+    <div class="quick-actions">
+      <button class="qa-btn" onclick="openTaskModal('${id}')">+ Task</button>
+      <button class="qa-btn" onclick="logActivityFocus('loc-act-text-${id}')">+ Activity</button>
+    </div>
+
+    <div class="dv-grid">
+      <div class="dv-panel" style="margin-bottom:0">
+        <div class="dvp-hdr"><span class="dvp-title">Location Contact</span></div>
+        <div class="dvp-body">
+          <div class="dvp-row"><span class="dvp-icon">👤</span><span class="dvp-val"><strong>${l.contact_name||'—'}</strong></span></div>
+          <div class="dvp-row"><span class="dvp-icon">📞</span><span class="dvp-val">${l.phone||'—'}</span></div>
+          <div class="dvp-row"><span class="dvp-icon">✉️</span><span class="dvp-val">${l.email||'—'}</span></div>
+        </div>
+      </div>
+      <div class="dv-panel" style="margin-bottom:0">
+        <div class="dvp-hdr"><span class="dvp-title">Revenue + Tier</span></div>
+        <div class="dvp-body">
+          <div class="dvp-row"><span class="dvp-icon">💰</span><span class="dvp-val"><strong>${fmt(locMRR(l))}/mo</strong> · ${fmt(locMRR(l)*12)}/yr</span></div>
+          <div class="dvp-row"><span class="dvp-icon">🏷️</span><span class="dvp-val">
+            <select class="form-select" style="padding:0.2rem 0.4rem;font-size:0.75rem" onchange="setLocTier('${id}',this.value)">
+              <option value="ess" ${l.tier==='ess'?'selected':''}>Essentials — $199/mo</option>
+              <option value="pro" ${l.tier==='pro'?'selected':''}>Professional — $349/mo</option>
+              <option value="ops" ${l.tier==='ops'?'selected':''}>Operations — $499/mo</option>
+            </select>
+          </span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-panel">
+      <div class="dvp-hdr"><span class="dvp-title">Pipeline Stage</span></div>
+      <div class="dvp-body"><div class="stage-editor">
+        ${STAGES.map(s=>`<button class="stage-opt ${l.stage===s.key?'sel-'+s.key:''}" onclick="setLocStage('${id}','${s.key}',this)">${s.label}</button>`).join('')}
+      </div></div>
+    </div>
+
+    <div class="dv-panel">
+      <div class="dvp-hdr"><span class="dvp-title">Follow-Up Date</span></div>
+      <div class="dvp-body"><div class="fu-row">
+        <input type="date" class="fu-input" value="${l.followUp||''}" onchange="setLocFollowUp('${id}',this.value)">
+        ${l.followUp?`<button class="fu-clr" onclick="setLocFollowUp('${id}','')">Clear</button><span class="fu-label">${fuLabel(l.followUp)}</span>`:''}
+      </div></div>
+    </div>
+
+    <div class="dv-panel">
+      <div class="dvp-hdr"><span class="dvp-title">Tasks</span><button class="loc-open" onclick="openTaskModal('${id}')">+ Add</button></div>
+      <div>${taskRows}</div>
+    </div>
+
+    <div class="act-log">
+      <div class="act-add">
+        <select class="act-type-sel" id="loc-act-type-${id}">
+          <option value="call">Call</option><option value="email">Email</option>
+          <option value="walkin">Walk-In</option><option value="demo">Demo</option><option value="note">Note</option>
+        </select>
+        <input class="act-text-inp" id="loc-act-text-${id}" placeholder="Log what happened at this location…" onkeydown="if(event.key==='Enter'){event.preventDefault();logLocAct('${id}')}">
+        <button class="act-log-btn" onclick="logLocAct('${id}')">Log</button>
+      </div>
+      <div class="act-entries">${actEntries}</div>
+    </div>
+
+    <div class="notes-panel">
+      <div class="dvp-hdr"><span class="dvp-title">Location Notes</span></div>
+      <textarea class="notes-ta" id="loc-notes-${id}" placeholder="Store-level context, GM notes, blockers…">${l.notes||''}</textarea>
+      <div class="notes-footer">
+        <span class="notes-status" id="loc-notes-status-${id}"></span>
+        <button class="notes-save-btn" onclick="saveLocNotes('${id}')">Save Notes</button>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// PIPELINE
+// ═══════════════════════════════════════════════════
+function renderPipeline(){
+  document.getElementById('kanban').innerHTML=STAGES.map(s=>{
+    const cards=accounts.filter(a=>a.stage===s.key);
+    const colMRR=cards.reduce((sum,a)=>sum+calcMRR(a),0);
+    return `<div class="kb-col">
+      <div class="kb-hdr" style="background:${s.color}22;border-bottom:2px solid ${s.color}">
+        <span class="kb-title" style="color:${s.color}">${s.label}</span>
+        <span class="kb-count" style="color:${s.color}">${cards.length} · ${fmt(colMRR)}</span>
+      </div>
+      <div class="kb-cards">${cards.map(a=>`<div class="kb-card" onclick="goToAcct('${a.id}')">
+        <div class="kbc-name">${a.name}</div>
+        <div class="kbc-region">${a.regionLabel} · ${a.locs} loc</div>
+        <div class="kbc-mrr">${fmt(calcMRR(a))}/mo</div>
+        ${a.followUp?`<div class="kbc-fu ${fuCls(a.followUp)}">${fuLabel(a.followUp)}</div>`:''}
+      </div>`).join('')||'<div style="font-size:0.7rem;color:var(--wg);padding:0.4rem 0">—</div>'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════════════════
+function renderTasks(){
+  const open=tasks.filter(t=>t.status!=='done').sort((a,b)=>(a.due||'').localeCompare(b.due||''));
+  const done=tasks.filter(t=>t.status==='done').sort((a,b)=>(b.due||'').localeCompare(a.due||'')).slice(0,30);
+  document.getElementById('tasks-open-count').textContent=open.length;
+  document.getElementById('tasks-done-count').textContent=done.length;
+  document.getElementById('tasks-sub').textContent=`${open.length} open · ${done.length} completed`;
+  document.getElementById('tasks-open-list').innerHTML=open.length?open.map(t=>taskRow(t,false)).join(''):'<div class="today-empty">No open tasks.</div>';
+  document.getElementById('tasks-done-list').innerHTML=done.length?done.map(t=>taskRow(t,true)).join(''):'<div class="today-empty">No completed tasks.</div>';
+}
+
+function taskRow(t,done){
+  const linked=accounts.find(a=>a.id===t.account_id)||locations.find(l=>l.id===t.account_id);
+  const d=dayDiff(t.due);
+  return `<div class="today-item">
+    <div class="ti-body">
+      <div class="ti-name"><span class="task-priority ${t.priority||'normal'}">${t.priority||'normal'}</span>${t.title}</div>
+      <div class="ti-meta">${linked?linked.name+' · ':''}Due ${fmtDate(t.due)}${t.note?' · '+t.note:''}</div>
+      <div class="ti-actions">
+        ${t.account_id?`<button class="ti-btn" onclick="openLinkedItem('${t.account_id}')">Open</button>`:''}
+        ${done?`<button class="ti-btn" onclick="reopenTask('${t.id}')">Reopen</button>`:`<button class="ti-btn" onclick="markTaskDone('${t.id}')">Mark Done</button>`}
+      </div>
+    </div>
+    <div class="ti-date ${d<0?'overdue':d===0?'today':'upcoming'}">${d<0?Math.abs(d)+'d overdue':fuLabel(t.due)}</div>
+  </div>`;
+}
+
+async function markTaskDone(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.status='done';await saveTask(t);renderAll();
+}
+async function reopenTask(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.status='open';await saveTask(t);renderAll();
+}
+
+// ═══════════════════════════════════════════════════
+// FOLLOW-UPS
+// ═══════════════════════════════════════════════════
+function renderFollowUps(){
+  const data=accounts.filter(a=>a.followUp).sort((a,b)=>a.followUp.localeCompare(b.followUp));
+  document.getElementById('fu-list').innerHTML=data.length?data.map(a=>{
+    const sInfo=si(a.stage);const fc=fuCls(a.followUp);
+    return `<div class="acct-card stage-${a.stage}" onclick="goToAcct('${a.id}')">
+      <div><div class="ac-name">${a.name}</div><div class="ac-meta">${a.regionLabel} · ${sInfo.label}</div></div>
+      <span class="ac-stage s-${a.stage}">${sInfo.label}</span>
+      <div class="ac-mrr">${fmt(calcMRR(a))}/mo</div>
+      <div class="ac-followup ${fc}" style="font-size:0.8rem;font-weight:600">${fuLabel(a.followUp)}</div></div>`;
+  }).join(''):'<div style="padding:3rem;text-align:center;color:var(--wg)">No follow-ups scheduled.</div>';
+}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS — ACCOUNTS
+// ═══════════════════════════════════════════════════
+async function setAcctStage(id,stage,el){
+  const a=accounts.find(x=>x.id===id);if(!a)return;
+  a.stage=stage;
+  document.querySelectorAll('.stage-editor .stage-opt').forEach(b=>b.className='stage-opt');
+  if(el) el.className=`stage-opt sel-${stage}`;
+  updateSidebar();
+  await saveAcct(a);
+}
+async function setAcctFollowUp(id,val){
+  const a=accounts.find(x=>x.id===id);if(!a)return;
+  a.followUp=val;await saveAcct(a);renderDetail(id);updateSidebar();
+}
+async function logAct(id){
+  const typeEl=document.getElementById('act-type-'+id);
+  const textEl=document.getElementById('act-text-'+id);
+  const text=textEl?.value?.trim()||'';if(!text)return;
+  await insertActivity(id,typeEl?.value||'note',text);
+  if(textEl)textEl.value='';
+  renderDetail(id);updateSidebar();
+}
+async function logLocAct(id){
+  const typeEl=document.getElementById('loc-act-type-'+id);
+  const textEl=document.getElementById('loc-act-text-'+id);
+  const text=textEl?.value?.trim()||'';if(!text)return;
+  await insertActivity(id,typeEl?.value||'note',text);
+  if(textEl)textEl.value='';
+  renderLocDetail(id);updateSidebar();
+}
+async function delActivity(actId,refId,isLoc=false){
+  await deleteActivity(actId);
+  if(isLoc) renderLocDetail(refId);
+  else renderDetail(refId);
+}
+async function saveNotes(id){
+  const a=accounts.find(x=>x.id===id);if(!a)return;
+  const ta=document.getElementById('notes-'+id);if(!ta)return;
+  a.notes=ta.value;await saveAcct(a);
+  const st=document.getElementById('notes-status-'+id);
+  if(st){st.textContent='Saved ✓';st.style.color='var(--green)';setTimeout(()=>st.textContent='',2000);}
+}
+async function saveLocNotes(id){
+  const l=locations.find(x=>x.id===id);if(!l)return;
+  const ta=document.getElementById('loc-notes-'+id);if(!ta)return;
+  l.notes=ta.value;await saveLoc(l);
+  const st=document.getElementById('loc-notes-status-'+id);
+  if(st){st.textContent='Saved ✓';st.style.color='var(--green)';setTimeout(()=>st.textContent='',2000);}
+}
+async function setLocStage(id,stage,el){
+  const l=locations.find(x=>x.id===id);if(!l)return;
+  l.stage=stage;
+  document.querySelectorAll('.stage-editor .stage-opt').forEach(b=>b.className='stage-opt');
+  if(el) el.className=`stage-opt sel-${stage}`;
+  await saveLoc(l);
+}
+async function setLocFollowUp(id,val){
+  const l=locations.find(x=>x.id===id);if(!l)return;
+  l.followUp=val;await saveLoc(l);renderLocDetail(id);updateSidebar();
+}
+async function setLocTier(id,tier){
+  const l=locations.find(x=>x.id===id);if(!l)return;
+  l.tier=tier;await saveLoc(l);renderLocDetail(id);
+}
+function logActivityFocus(inputId){
+  const el=document.getElementById(inputId);
+  if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}
+}
+
+// ═══════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+async function submitAddAccount(){
+  const name=document.getElementById('na-name').value.trim();
+  if(!name){alert('Group name is required.');return;}
+  const region=document.getElementById('na-region').value;
+  const tier=document.getElementById('na-tier').value;
+  const tierLabels={ess:'Essentials',pro:'Professional',ops:'Operations'};
+  const locs=parseInt(document.getElementById('na-locs').value)||1;
+  const newA={
+    id:crypto.randomUUID(), name, region, regionLabel:REGION_LABELS[region]||region,
+    locs, tier, tierLabel:tierLabels[tier], stage:'new',
+    contact:{name:document.getElementById('na-contact').value.trim(),phone:document.getElementById('na-phone').value.trim(),email:document.getElementById('na-email').value.trim()},
+    website:document.getElementById('na-website').value.trim(),
+    locList:[], notes:document.getElementById('na-notes').value.trim(), followUp:''
+  };
+  setSyncState('syncing');
+  const {error}=await sb.from('crm_accounts').insert({id:newA.id,...acctToDb(newA)});
+  if(error){setSyncState('error');console.error(error);alert('Error saving account.');return;}
+  setSyncState('ok');
+  accounts.push(newA);
+  ['na-name','na-contact','na-phone','na-email','na-website','na-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('na-locs').value='2';
+  closeModal('add-acct-modal');
+  goToAcct(newA.id);updateSidebar();
+}
+
+function openAddLocModal(orgId){
+  addLocOrgId=orgId;
+  ['nl-name','nl-city','nl-contact','nl-phone','nl-email','nl-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nl-tier').value='pro';
+  openModal('add-loc-modal');
+}
+async function submitAddLocation(){
+  const name=document.getElementById('nl-name').value.trim();
+  if(!name||!addLocOrgId){alert('Location name is required.');return;}
+  const newL={
+    id:crypto.randomUUID(), org_id:addLocOrgId, name,
+    city:document.getElementById('nl-city').value.trim(),
+    tier:document.getElementById('nl-tier').value,
+    stage:'new',
+    contact_name:document.getElementById('nl-contact').value.trim(),
+    phone:document.getElementById('nl-phone').value.trim(),
+    email:document.getElementById('nl-email').value.trim(),
+    website:'',
+    notes:document.getElementById('nl-notes').value.trim(),
+    followUp:''
+  };
+  setSyncState('syncing');
+  const {error}=await sb.from('crm_locations').insert({id:newL.id,...locToDb(newL)});
+  if(error){setSyncState('error');console.error(error);alert('Error saving location.');return;}
+  setSyncState('ok');
+  locations.push(newL);
+  closeModal('add-loc-modal');
+  renderDetail(addLocOrgId);updateSidebar();
+}
+
+function openTaskModal(prefillId=''){
+  taskPrefillAcct=prefillId||null;
+  document.getElementById('nt-title').value='';
+  document.getElementById('nt-due').value=todayStr();
+  document.getElementById('nt-priority').value='normal';
+  document.getElementById('nt-note').value='';
+  const sel=document.getElementById('nt-account');
+  const acctOpts=accounts.map(a=>`<option value="${a.id}">Org · ${a.name}</option>`).join('');
+  const locOpts=locations.map(l=>{const org=accounts.find(a=>a.id===l.org_id);return `<option value="${l.id}">Loc · ${org?org.name+' — ':''}${l.name}</option>`;}).join('');
+  sel.innerHTML='<option value="">No linked account</option>'+acctOpts+locOpts;
+  if(prefillId) sel.value=prefillId;
+  openModal('task-modal');
+}
+async function submitAddTask(){
+  const title=document.getElementById('nt-title').value.trim();
+  const due=document.getElementById('nt-due').value;
+  if(!title||!due){alert('Task title and due date are required.');return;}
+  const newT={
+    id:crypto.randomUUID(), title, due,
+    status:'open',
+    priority:document.getElementById('nt-priority').value,
+    note:document.getElementById('nt-note').value.trim(),
+    account_id:document.getElementById('nt-account').value||null
+  };
+  tasks.unshift(newT);
+  await saveTask(newT);
+  closeModal('task-modal');
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════
+// MOBILE + KEYBOARD
+// ═══════════════════════════════════════════════════
+window.addEventListener('resize',()=>{if(window.innerWidth>900)closeSidebar();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+});
+
+// ═══════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════
+init();
 </script>
 </body>
 </html>
