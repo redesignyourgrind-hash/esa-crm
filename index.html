@@ -628,9 +628,14 @@ async function onSignedIn(user){
   document.getElementById('topbar-user').textContent=user.email||'';
   showApp();
   setLoadMsg('Loading your pipeline…');
-  await loadAll();
-  hideLoading();
-  renderAll();
+  try{
+    await loadAll();
+    renderAll();
+  }catch(e){
+    console.error('onSignedIn error:', e);
+  }finally{
+    hideLoading();
+  }
 }
 
 async function doSignIn(){
@@ -697,20 +702,43 @@ function hideLoading(){document.getElementById('loading-screen').classList.add('
 async function loadAll(){
   setSyncState('syncing','Loading…');
   try{
-    const [ar,actr,lr,tr]=await Promise.all([
+    const [ar, actr] = await Promise.all([
       sb.from('crm_accounts').select('*').order('created_at'),
-      sb.from('crm_activities').select('*').order('created_at',{ascending:false}),
-      sb.from('crm_locations').select('*').order('created_at'),
-      sb.from('crm_tasks').select('*').order('due',{ascending:true})
+      sb.from('crm_activities').select('*').order('created_at',{ascending:false})
     ]);
-    if(ar.data) accounts=ar.data.map(dbToAcct);
-    if(actr.data) activities=actr.data;
-    if(lr.data) locations=lr.data.map(dbToLoc);
-    if(tr.data) tasks=tr.data;
+
+    if(ar.error) console.error('crm_accounts error:', ar.error);
+    if(actr.error) console.error('crm_activities error:', actr.error);
+
+    accounts = ar.data ? ar.data.map(dbToAcct) : [];
+    activities = actr.data || [];
+
+    try{
+      const lr = await sb.from('crm_locations').select('*').order('created_at');
+      if(lr.error) console.warn('crm_locations not loaded:', lr.error.message || lr.error);
+      else locations = lr.data ? lr.data.map(dbToLoc) : [];
+    }catch(e){
+      console.warn('crm_locations load skipped:', e);
+      locations = [];
+    }
+
+    try{
+      const tr = await sb.from('crm_tasks').select('*').order('due',{ascending:true});
+      if(tr.error) console.warn('crm_tasks not loaded:', tr.error.message || tr.error);
+      else tasks = tr.data || [];
+    }catch(e){
+      console.warn('crm_tasks load skipped:', e);
+      tasks = [];
+    }
+
     setSyncState('ok');
   }catch(e){
-    console.error('loadAll error:',e);
+    console.error('loadAll fatal error:',e);
     setSyncState('error','Load failed');
+    accounts = accounts || [];
+    activities = activities || [];
+    locations = locations || [];
+    tasks = tasks || [];
   }
 }
 
