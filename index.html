@@ -1337,7 +1337,7 @@ function saveLocalLocations(){
   try{ localStorage.setItem(LOCATION_STORE_KEY, JSON.stringify(locations)); }catch(e){}
 }
 
-async function loadLocations(){
+async async function loadLocations(){
   let loaded = false;
   try{
     let res = await sb.from('crm_locations').select('*').order('created_at', {ascending:true});
@@ -1489,6 +1489,243 @@ function renderTasks(){
   document.getElementById('task-open-list').innerHTML = renderTaskList(open, false);
   document.getElementById('task-done-list').innerHTML = renderTaskList(done, true);
 }
+
+
+function renderOrgLocations(orgId){
+  const orgLocs = getLocationsForOrg(orgId);
+  if(!orgLocs.length) return '<div class="location-empty">No locations added yet.</div>';
+  return orgLocs.map(l => {
+    const si = stageInfo(l.stage);
+    return `<div class="location-row">
+      <div class="location-main">
+        <div class="location-name">${l.name}</div>
+        <div class="location-meta">${l.city || 'No city set'} · ${si.label}</div>
+      </div>
+      <div class="location-right">
+        <div class="location-tier">${(l.tier||'pro').toUpperCase()} · ${fmt(calcLocationMRR(l))}/mo</div>
+        <div class="location-value"><button class="linkish-btn" onclick="goToLocation('${l.id}')">Open</button></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showDetailView(){
+  currentView = 'detail';
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-detail').classList.add('active');
+}
+
+function goToLocation(id){
+  currentLocationId = id;
+  const loc = locations.find(x=>x.id===id);
+  if(loc) currentAcctId = loc.org_id;
+  currentView = 'location-detail';
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-location-detail').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  closeSidebar();
+  renderLocationDetail(id);
+}
+
+function goBackFromLocation(){
+  if(currentAcctId){
+    showDetailView();
+    renderDetail(currentAcctId);
+  } else {
+    const acctNav = Array.from(document.querySelectorAll('.nav-item')).find(n=>n.textContent.includes('Accounts'));
+    showView('accounts', acctNav);
+  }
+}
+
+function openLocationModal(orgId){
+  const org = accounts.find(a=>a.id===orgId);
+  if(!org) return;
+  document.getElementById('loc-org-name').value = org.name;
+  document.getElementById('location-modal').dataset.orgId = orgId;
+  document.getElementById('loc-name').value = '';
+  document.getElementById('loc-city').value = '';
+  document.getElementById('loc-tier').value = 'pro';
+  document.getElementById('loc-stage').value = 'new';
+  document.getElementById('loc-contact-name').value = '';
+  document.getElementById('loc-phone').value = '';
+  document.getElementById('loc-email').value = '';
+  document.getElementById('loc-website').value = '';
+  document.getElementById('loc-notes').value = '';
+  document.getElementById('location-modal').classList.add('open');
+}
+
+async function addLocation(){
+  const org_id = document.getElementById('location-modal').dataset.orgId || '';
+  const name = document.getElementById('loc-name').value.trim();
+  if(!org_id || !name){
+    alert('Location name is required.');
+    return;
+  }
+  const loc = {
+    id: crypto.randomUUID(),
+    org_id,
+    name,
+    city: document.getElementById('loc-city').value.trim(),
+    tier: document.getElementById('loc-tier').value,
+    stage: document.getElementById('loc-stage').value,
+    contact_name: document.getElementById('loc-contact-name').value.trim(),
+    phone: document.getElementById('loc-phone').value.trim(),
+    email: document.getElementById('loc-email').value.trim(),
+    website: document.getElementById('loc-website').value.trim(),
+    notes: document.getElementById('loc-notes').value.trim(),
+    followUp: ''
+  };
+  locations.push(loc);
+  saveLocalLocations();
+  await persistLocation(loc);
+  closeModal('location-modal');
+  renderAll();
+  goToAccount(org_id);
+}
+
+async function setLocationStage(id, stage){
+  const loc = locations.find(x=>x.id===id);
+  if(!loc) return;
+  loc.stage = stage;
+  saveLocalLocations();
+  await persistLocation(loc);
+  renderLocationDetail(id);
+  renderAll();
+}
+
+async function setLocationFollowUp(id, val){
+  const loc = locations.find(x=>x.id===id);
+  if(!loc) return;
+  loc.followUp = val;
+  saveLocalLocations();
+  await persistLocation(loc);
+  renderLocationDetail(id);
+  renderAll();
+}
+
+async function saveLocationNotes(id){
+  const loc = locations.find(x=>x.id===id);
+  if(!loc) return;
+  const ta = document.getElementById('loc-notes-ta-'+id);
+  if(!ta) return;
+  loc.notes = ta.value;
+  saveLocalLocations();
+  await persistLocation(loc);
+  const st = document.getElementById('loc-notes-status-'+id);
+  if(st){
+    st.textContent = 'Saved ✓';
+    st.style.color = 'var(--green)';
+    setTimeout(()=>st.textContent='', 2000);
+  }
+}
+
+async function setLocationTier(id, tier){
+  const loc = locations.find(x=>x.id===id);
+  if(!loc) return;
+  loc.tier = tier;
+  saveLocalLocations();
+  await persistLocation(loc);
+  renderLocationDetail(id);
+  renderAll();
+}
+
+function openLinkedItem(id){
+  const loc = locations.find(l=>l.id===id);
+  if(loc) return goToLocation(id);
+  return goToAccount(id);
+}
+
+function renderLocationDetail(id){
+  const loc = locations.find(x=>x.id===id);
+  if(!loc) return;
+  const org = accounts.find(a=>a.id===loc.org_id);
+  const si = stageInfo(loc.stage);
+  const locActs = activities.filter(x=>x.account_id===id);
+  const locTasks = tasks.filter(t=>t.account_id===id && t.status!=='done');
+
+  document.getElementById('location-detail-content').innerHTML = `
+    <div class="dv-back" onclick="goBackFromLocation()">← Back to ${org ? org.name : 'Organization'}</div>
+    <div class="dv-header">
+      <div style="flex:1">
+        <div class="dv-name">${loc.name}</div>
+        <div class="dv-region">${org ? org.name + ' · ' : ''}${loc.city || 'No city set'} · ${(loc.tier||'pro').toUpperCase()} Tier</div>
+        <div class="dv-badges"><span class="ac-stage s-${loc.stage}">${si.label}</span></div>
+      </div>
+      <div class="dv-right"><div class="dv-mrr">${fmt(calcLocationMRR(loc))}/mo</div><div class="dv-arr">${fmt(calcLocationMRR(loc)*12)}/yr</div></div>
+    </div>
+
+    <div class="dv-grid">
+      <div class="dv-panel"><div class="dvp-header"><span class="dvp-title">Location Contact</span></div><div class="dvp-body">
+        <div class="dvp-row"><span class="dvp-icon">👤</span><span class="dvp-val"><strong>${loc.contact_name || '—'}</strong></span></div>
+        <div class="dvp-row"><span class="dvp-icon">📞</span><span class="dvp-val">${loc.phone || '—'}</span></div>
+        <div class="dvp-row"><span class="dvp-icon">✉</span><span class="dvp-val">${loc.email || '—'}</span></div>
+        <div class="dvp-row"><span class="dvp-icon">🌐</span><span class="dvp-val">${loc.website ? `<a href="https://${loc.website.replace(/^https?:\/\//,'')}" target="_blank">${loc.website}</a>` : '—'}</span></div>
+      </div></div>
+      <div class="dv-panel"><div class="dvp-header"><span class="dvp-title">Revenue + Tier</span></div><div class="dvp-body">
+        <div class="dvp-row"><span class="dvp-icon">💰</span><span class="dvp-val"><strong>${fmt(calcLocationMRR(loc))}/mo</strong> · ${fmt(calcLocationMRR(loc)*12)}/yr</span></div>
+        <div class="dvp-row"><span class="dvp-icon">🏷</span><span class="dvp-val">
+          <select class="form-select" onchange="setLocationTier('${loc.id}', this.value)">
+            <option value="ess" ${(loc.tier||'pro')==='ess'?'selected':''}>Essentials</option>
+            <option value="pro" ${(loc.tier||'pro')==='pro'?'selected':''}>Professional</option>
+            <option value="ops" ${(loc.tier||'pro')==='ops'?'selected':''}>Operations</option>
+          </select>
+        </span></div>
+      </div></div>
+    </div>
+
+    <div class="dv-panel" style="margin-bottom:1.1rem">
+      <div class="dvp-header"><span class="dvp-title">Pipeline Stage</span></div>
+      <div class="dvp-body"><div class="stage-editor">
+        ${STAGES.map(s=>`<button class="stage-opt ${loc.stage===s.key?'sel-'+s.key:''}" onclick="setLocationStage('${loc.id}','${s.key}')">${s.label}</button>`).join('')}
+      </div></div>
+    </div>
+
+    <div class="dv-panel" style="margin-bottom:1.1rem">
+      <div class="dvp-header"><span class="dvp-title">Follow-Up Date</span></div>
+      <div class="dvp-body"><div class="followup-setter">
+        <input type="date" class="followup-date-input" value="${loc.followUp||''}" onchange="setLocationFollowUp('${loc.id}',this.value)">
+        ${loc.followUp?`<button class="followup-clr" onclick="setLocationFollowUp('${loc.id}','')">Clear</button><span style="font-size:0.75rem;color:var(--wg)">${fuLabel(loc.followUp)}</span>`:''}
+      </div></div>
+    </div>
+
+    <div class="dv-panel" style="margin-bottom:1.1rem">
+      <div class="dvp-header"><span class="dvp-title">Location Tasks</span><span style="font-size:0.62rem;color:var(--wg)">${locTasks.length} open</span></div>
+      <div class="dvp-body">
+        <div class="today-actions" style="margin-bottom:0.6rem"><button class="today-btn" onclick="openTaskModal('${loc.id}')">+ Task</button></div>
+        ${locTasks.length ? renderTaskList(locTasks, false) : '<div class="today-empty">No open tasks for this location.</div>'}
+      </div>
+    </div>
+
+    <div class="al-full">
+      <div class="al-add">
+        <select class="al-type-sel" id="al-type-${loc.id}">
+          <option value="call">Call</option><option value="email">Email</option>
+          <option value="walkin">Walk-In</option><option value="demo">Demo</option><option value="note">Note</option>
+        </select>
+        <input class="al-text-input" id="al-text-${loc.id}" placeholder="Log what happened at this location…" onkeydown="if(event.key==='Enter'){event.preventDefault();logActivity('${loc.id}')}">
+        <button class="al-add-btn" onclick="logActivity('${loc.id}')">Log</button>
+      </div>
+      <div class="inline-status" id="al-status-${loc.id}"></div>
+      <div class="al-entries" id="al-entries-${loc.id}">
+        ${locActs.length?locActs.map(act=>`<div class="al-entry">
+          <span class="ale-type ${TYPE_CLS[act.type]||'ale-t-note'}">${TYPE_LABEL[act.type]||'Note'}</span>
+          <div class="ale-body"><div class="ale-text">${act.text}</div><div class="ale-date">${fmtDate(act.created_at?.split('T')[0])}</div></div>
+          <span class="ale-delete" onclick="deleteActivity('${loc.id}','${act.id}')">✕</span>
+        </div>`).join(''):'<div class="al-empty">No activity logged yet for this location.</div>'}
+      </div>
+    </div>
+
+    <div class="notes-panel">
+      <div class="dvp-header"><span class="dvp-title">Location Notes</span></div>
+      <textarea class="notes-ta" id="loc-notes-ta-${loc.id}" placeholder="Store-level context, blockers, champions…">${loc.notes||''}</textarea>
+      <div class="notes-footer">
+        <span class="notes-status" id="loc-notes-status-${loc.id}"></span>
+        <button class="notes-save-btn" onclick="saveLocationNotes('${loc.id}')">Save Notes</button>
+      </div>
+    </div>
+  `;
+}
+
 
 function renderToday(){
   const overdueFollowups = accounts.filter(a=>a.followUp && dayDiff(a.followUp)<0).map(a=>({kind:'followup', account:a, due:a.followUp}));
