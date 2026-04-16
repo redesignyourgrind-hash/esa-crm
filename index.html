@@ -614,6 +614,7 @@ function setSyncState(state,msg){
 async function init(){
   document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
   setLoadMsg('Checking session…');
+  setTimeout(()=>{ try{ hideLoading(); }catch(e){} }, 9000);
 
   sb.auth.onAuthStateChange(async(event,session)=>{
     if(event==='SIGNED_IN'&&session) await onSignedIn(session.user);
@@ -697,23 +698,31 @@ function setLoadMsg(msg){
 }
 function hideLoading(){document.getElementById('loading-screen').classList.add('hidden');}
 
+
+async function withTimeout(promise, ms, label){
+  return await Promise.race([
+    promise,
+    new Promise((_, reject)=>setTimeout(()=>reject(new Error(label + ' timed out')), ms))
+  ]);
+}
+
 // ═══════════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════════
 async function loadAll(){
   setSyncState('syncing','Loading…');
   try{
-    const [ar,actr] = await Promise.all([
-      sb.from('crm_accounts').select('*').order('created_at'),
-      sb.from('crm_activities').select('*').order('created_at',{ascending:false})
-    ]);
+    const ar = await withTimeout(sb.from('crm_accounts').select('*').order('created_at'), 5000, 'crm_accounts');
+    const actr = await withTimeout(sb.from('crm_activities').select('*').order('created_at',{ascending:false}), 5000, 'crm_activities');
+
     if(ar.error) console.error('crm_accounts error:', ar.error);
     if(actr.error) console.error('crm_activities error:', actr.error);
+
     accounts = ar.data ? ar.data.map(dbToAcct) : [];
     activities = actr.data || [];
 
     try{
-      const lr = await sb.from('crm_locations').select('*').order('created_at');
+      const lr = await withTimeout(sb.from('crm_locations').select('*').order('created_at'), 4000, 'crm_locations');
       if(lr.error) console.warn('crm_locations not loaded:', lr.error.message || lr.error);
       else locations = lr.data ? lr.data.map(dbToLoc) : [];
     }catch(e){
@@ -722,7 +731,7 @@ async function loadAll(){
     }
 
     try{
-      const tr = await sb.from('crm_tasks').select('*').order('due',{ascending:true});
+      const tr = await withTimeout(sb.from('crm_tasks').select('*').order('due',{ascending:true}), 4000, 'crm_tasks');
       if(tr.error) console.warn('crm_tasks not loaded:', tr.error.message || tr.error);
       else tasks = tr.data || [];
     }catch(e){
@@ -732,8 +741,8 @@ async function loadAll(){
 
     setSyncState('ok');
   }catch(e){
-    console.error('loadAll error:',e);
-    setSyncState('error','Load failed');
+    console.error('loadAll error:', e);
+    setSyncState('error','Partial load');
     accounts = accounts || [];
     activities = activities || [];
     locations = locations || [];
