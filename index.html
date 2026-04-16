@@ -357,7 +357,8 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <div id="auth-screen" class="auth-screen hidden">
   <div class="auth-card">
     <div class="auth-logo">ESA <span>CRM</span></div>
-    <div class="auth-sub">Sign in to access your pipeline</div>
+    <div class="auth-sub">Use password or magic link. Magic link must point back to this exact GitHub Pages URL in Supabase redirect settings.</div>
+<div class="auth-sub">Sign in to access your pipeline</div>
     <input class="auth-input" id="auth-email" onkeydown="handleAuthKey(event)" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')doSignIn()">
     <input class="auth-input" id="auth-password" onkeydown="handleAuthKey(event)" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doSignIn()">
     <div class="auth-err" id="auth-err"></div>
@@ -702,14 +703,12 @@ function hideLoading(){document.getElementById('loading-screen').classList.add('
 async function loadAll(){
   setSyncState('syncing','Loading…');
   try{
-    const [ar, actr] = await Promise.all([
+    const [ar,actr] = await Promise.all([
       sb.from('crm_accounts').select('*').order('created_at'),
       sb.from('crm_activities').select('*').order('created_at',{ascending:false})
     ]);
-
     if(ar.error) console.error('crm_accounts error:', ar.error);
     if(actr.error) console.error('crm_activities error:', actr.error);
-
     accounts = ar.data ? ar.data.map(dbToAcct) : [];
     activities = actr.data || [];
 
@@ -733,7 +732,7 @@ async function loadAll(){
 
     setSyncState('ok');
   }catch(e){
-    console.error('loadAll fatal error:',e);
+    console.error('loadAll error:',e);
     setSyncState('error','Load failed');
     accounts = accounts || [];
     activities = activities || [];
@@ -741,7 +740,6 @@ async function loadAll(){
     tasks = tasks || [];
   }
 }
-
 function dbToAcct(r){
   return {
     id:r.id, name:r.name, region:r.region, regionLabel:r.region_label||'',
