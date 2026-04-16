@@ -1337,7 +1337,7 @@ function saveLocalLocations(){
   try{ localStorage.setItem(LOCATION_STORE_KEY, JSON.stringify(locations)); }catch(e){}
 }
 
-async async function loadLocations(){
+async function loadLocations(){
   let loaded = false;
   try{
     let res = await sb.from('crm_locations').select('*').order('created_at', {ascending:true});
