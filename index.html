@@ -1256,7 +1256,7 @@ function goToAccount(id) {
   renderDetail(id);
 }
 
-function goBack() { closeSidebar(); showView('accounts', document.querySelectorAll('.nav-item')[2]); }
+function goBack() { closeSidebar(); showView('accounts', Array.from(document.querySelectorAll('.nav-item')).find(n=>n.textContent.includes('Accounts'))); }
 
 function renderAll() { updateSidebar(); renderView(currentView); }
 function renderView(name) {
@@ -1337,7 +1337,7 @@ function saveLocalLocations(){
   try{ localStorage.setItem(LOCATION_STORE_KEY, JSON.stringify(locations)); }catch(e){}
 }
 
-async function loadLocations(){
+async async function loadLocations(){
   let loaded = false;
   try{
     let res = await sb.from('crm_locations').select('*').order('created_at', {ascending:true});
@@ -1718,7 +1718,6 @@ function renderDetail(id) {
       <div class="dv-panel"><div class="dvp-header"><span class="dvp-title">Locations</span><button class="linkish-btn" onclick="openLocationModal('${a.id}')">+ Add Location</button></div>
         <div class="dvp-body" style="padding:0.6rem 0.9rem">${renderOrgLocations(a.id)}</div>
       </div>
-    </div>
 
     <div class="quick-actions-row">
       <button class="quick-mini-btn" onclick="openLocationModal('${a.id}')">+ Location</button>
