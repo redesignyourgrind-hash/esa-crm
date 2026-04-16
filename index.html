@@ -43,6 +43,8 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .auth-input::placeholder{color:var(--wg);}
 .auth-btn{width:100%;padding:0.6rem;background:var(--gold);border:none;color:var(--ch);font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border-radius:6px;cursor:pointer;transition:background 0.2s;}
 .auth-btn:hover{background:var(--gold-l);}
+.auth-link{font-size:0.72rem;color:var(--wg);cursor:pointer;text-decoration:underline;text-underline-offset:3px;background:none;border:none;font-family:'DM Sans',sans-serif;padding:0;}
+.auth-link:hover{color:var(--gold);}
 
 /* SYNC */
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background 0.3s;}
@@ -199,14 +201,17 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .dvp-val strong{color:var(--ow);font-weight:500;}
 .dvp-val a{color:var(--gold);text-decoration:none;}
 .dvp-val a:hover{text-decoration:underline;}
-.loc-row{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--ch-s);cursor:pointer;}
+.loc-row{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.9rem;border-bottom:1px solid var(--ch-s);cursor:pointer;transition:background 0.15s;}
 .loc-row:last-child{border-bottom:none;}
+.loc-row:hover{background:rgba(201,168,76,0.03);}
 .loc-row:hover .loc-name{color:var(--gold);}
 .loc-num{font-size:0.6rem;color:var(--wg);flex-shrink:0;width:16px;}
-.loc-name{font-size:0.8rem;color:var(--ow);flex:1;}
+.loc-name{font-size:0.82rem;color:var(--ow);flex:1;font-weight:500;}
 .loc-meta{font-size:0.68rem;color:var(--wg);}
-.loc-open{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:3px;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.loc-open{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.18rem 0.55rem;border-radius:3px;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
 .loc-open:hover{color:var(--gold);border-color:var(--gold-d);}
+.loc-convert{font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.18rem 0.55rem;border-radius:3px;border:1px solid var(--amber);background:var(--amber-g);color:var(--amber);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.loc-convert:hover{background:var(--amber);color:var(--ch);}
 .stage-editor{display:flex;gap:0.35rem;flex-wrap:wrap;}
 .stage-opt{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.22rem 0.55rem;border-radius:20px;cursor:pointer;border:1px solid var(--ch-b);background:var(--ch-s);color:var(--wg);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
 .stage-opt.sel-new{background:#2a2a2a;color:#888;border-color:#444;}
@@ -358,36 +363,41 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <div class="auth-card">
     <div class="auth-logo">ESA <span>CRM</span></div>
 
-    <!-- SIGN IN MODE -->
+    <!-- SIGN IN -->
     <div id="auth-mode-login">
       <div class="auth-sub">Sign in to your account.</div>
-      <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
-      <input class="auth-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doSignIn()">
+      <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"
+        onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
+      <input class="auth-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doSignIn()">
       <div class="auth-err" id="auth-err"></div>
       <button class="auth-btn" onclick="doSignIn()">Sign In</button>
-      <div style="text-align:center;margin-top:0.75rem">
-        <span style="font-size:0.72rem;color:var(--wg);cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="switchAuthMode('reset')">Forgot password?</span>
+      <div style="text-align:center;margin-top:0.85rem">
+        <button class="auth-link" onclick="switchAuthMode('reset')">Forgot password?</button>
       </div>
     </div>
 
-    <!-- RESET PASSWORD MODE -->
+    <!-- FORGOT PASSWORD -->
     <div id="auth-mode-reset" style="display:none">
       <div class="auth-sub">Enter your email and we'll send a password reset link.</div>
-      <input class="auth-input" id="auth-reset-email" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')doSendReset()">
+      <input class="auth-input" id="auth-reset-email" type="email" placeholder="Email address" autocomplete="email"
+        onkeydown="if(event.key==='Enter')doSendReset()">
       <div class="auth-err" id="auth-reset-err"></div>
       <button class="auth-btn" onclick="doSendReset()">Send Reset Link</button>
-      <div style="text-align:center;margin-top:0.75rem">
-        <span style="font-size:0.72rem;color:var(--wg);cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="switchAuthMode('login')">← Back to sign in</span>
+      <div style="text-align:center;margin-top:0.85rem">
+        <button class="auth-link" onclick="switchAuthMode('login')">← Back to sign in</button>
       </div>
     </div>
 
-    <!-- SET NEW PASSWORD MODE (after clicking reset link) -->
+    <!-- SET NEW PASSWORD (shown after clicking reset link) -->
     <div id="auth-mode-newpass" style="display:none">
       <div class="auth-sub">Choose a new password for your account.</div>
-      <input class="auth-input" id="auth-newpass" type="password" placeholder="New password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSetNewPassword()">
-      <input class="auth-input" id="auth-newpass-confirm" type="password" placeholder="Confirm new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSetNewPassword()">
+      <input class="auth-input" id="auth-newpass" type="password" placeholder="New password (min 8 chars)" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')document.getElementById('auth-newpass-confirm').focus()">
+      <input class="auth-input" id="auth-newpass-confirm" type="password" placeholder="Confirm new password" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')doSetNewPassword()">
       <div class="auth-err" id="auth-newpass-err"></div>
-      <button class="auth-btn" onclick="doSetNewPassword()">Set Password & Sign In</button>
+      <button class="auth-btn" onclick="doSetNewPassword()">Set Password &amp; Sign In</button>
     </div>
 
   </div>
@@ -487,7 +497,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
     <!-- TASKS -->
     <div id="view-tasks" class="view">
-      <div class="view-header"><div><div class="view-title">Tasks</div><div class="view-sub" id="tasks-sub"></div></div><div class="view-header-right"><button class="topbar-btn primary" onclick="openTaskModal()">+ Task</button></div></div>
+      <div class="view-header"><div><div class="view-title">Tasks</div><div class="view-sub" id="tasks-sub"></div></div><div class="view-header-right"><button class="topbar-btn" onclick="openTaskModal()">+ Task</button></div></div>
       <div class="view-content">
         <div class="today-section"><div class="dp-header"><span class="dp-title">Open</span><span class="dp-count" id="tasks-open-count">0</span></div><div id="tasks-open-list"></div></div>
         <div class="today-section" style="margin-top:1rem"><div class="dp-header"><span class="dp-title">Completed</span><span class="dp-count" id="tasks-done-count">0</span></div><div id="tasks-done-list"></div></div>
@@ -496,7 +506,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
     <!-- FOLLOW-UPS -->
     <div id="view-followups" class="view">
-      <div class="view-header"><div><div class="view-title">Follow-Ups</div><div class="view-sub">Accounts with scheduled dates</div></div></div>
+      <div class="view-header"><div><div class="view-title">Follow-Ups</div><div class="view-sub">All scheduled follow-ups</div></div></div>
       <div class="view-content"><div class="acct-list" id="fu-list"></div></div>
     </div>
 
@@ -504,14 +514,14 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 </div><!-- /app-body -->
 
 <!-- FAB -->
-<button class="fab" id="fab-btn" onclick="openTaskModal()" style="display:none">+</button>
+<button class="fab" id="fab-btn" style="display:none" onclick="openModal('add-acct-modal')">+</button>
 
 <!-- ADD ACCOUNT MODAL -->
 <div class="modal-overlay" id="add-acct-modal">
   <div class="modal">
     <div class="modal-hdr"><span class="modal-title">Add Account</span><button class="modal-close" onclick="closeModal('add-acct-modal')">✕</button></div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">Group Name *</label><input class="form-input" id="na-name" placeholder="e.g. Johnson Restaurant Group"></div>
+      <div class="form-group"><label class="form-label">Group / Org Name *</label><input class="form-input" id="na-name" placeholder="e.g. Kingfisher Seafood Group"></div>
       <div class="form-group"><label class="form-label">Region</label>
         <select class="form-select" id="na-region">
           <option value="AL">S. Alabama</option><option value="FL">FL Panhandle</option><option value="MS">S. Mississippi</option><option value="LA">S. Louisiana</option><option value="OTHER">Other</option>
@@ -641,9 +651,18 @@ async function init(){
   document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
   setLoadMsg('Checking session…');
 
+  // Check URL hash for Supabase auth tokens (password reset, magic link, etc.)
+  const hash = window.location.hash;
+  if(hash && hash.includes('type=recovery')){
+    // Strip the hash so back/refresh don't re-trigger it
+    history.replaceState(null,'',window.location.pathname+window.location.search);
+    showAuthScreen();
+    switchAuthMode('newpass');
+    return;
+  }
+
   sb.auth.onAuthStateChange(async(event,session)=>{
     if(event==='PASSWORD_RECOVERY'){
-      // User clicked the reset link — show the set-new-password form
       showAuthScreen();
       switchAuthMode('newpass');
       return;
@@ -670,9 +689,8 @@ function switchAuthMode(mode){
   document.getElementById('auth-mode-login').style.display   = mode==='login'   ? '' : 'none';
   document.getElementById('auth-mode-reset').style.display   = mode==='reset'   ? '' : 'none';
   document.getElementById('auth-mode-newpass').style.display = mode==='newpass' ? '' : 'none';
-  // Clear all error messages when switching
   ['auth-err','auth-reset-err','auth-newpass-err'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.textContent='';
+    const el=document.getElementById(id);if(el){el.textContent='';el.style.color='var(--red)';}
   });
 }
 
@@ -680,17 +698,15 @@ async function doSignIn(){
   const email=document.getElementById('auth-email').value.trim();
   const password=document.getElementById('auth-password').value;
   const errEl=document.getElementById('auth-err');
-  errEl.textContent='';
-  errEl.style.color='var(--red)';
+  errEl.textContent='';errEl.style.color='var(--red)';
   if(!email){errEl.textContent='Please enter your email address.';return;}
   if(!password){errEl.textContent='Please enter your password.';return;}
-  errEl.style.color='var(--wg)';
-  errEl.textContent='Signing in…';
+  errEl.style.color='var(--wg)';errEl.textContent='Signing in…';
   const {error}=await sb.auth.signInWithPassword({email,password});
   if(error){
     errEl.style.color='var(--red)';
     errEl.textContent=error.message==='Invalid login credentials'
-      ? 'Incorrect email or password. Use "Forgot password?" below if needed.'
+      ? 'Incorrect email or password. Use "Forgot password?" if needed.'
       : error.message;
   }
 }
@@ -698,20 +714,17 @@ async function doSignIn(){
 async function doSendReset(){
   const email=document.getElementById('auth-reset-email').value.trim();
   const errEl=document.getElementById('auth-reset-err');
-  errEl.textContent='';
-  errEl.style.color='var(--red)';
+  errEl.textContent='';errEl.style.color='var(--red)';
   if(!email){errEl.textContent='Please enter your email address.';return;}
-  errEl.style.color='var(--wg)';
-  errEl.textContent='Sending reset link…';
+  errEl.style.color='var(--wg)';errEl.textContent='Sending reset link…';
   const {error}=await sb.auth.resetPasswordForEmail(email,{
-    redirectTo: window.location.href
+    redirectTo: window.location.href.split('#')[0]
   });
   if(error){
-    errEl.style.color='var(--red)';
-    errEl.textContent=error.message;
+    errEl.style.color='var(--red)';errEl.textContent=error.message;
   } else {
     errEl.style.color='var(--green)';
-    errEl.textContent='✓ Reset link sent — check your email, click the link, then come back here to set your password.';
+    errEl.textContent='✓ Link sent! Check your email, click it, and you\'ll land back here on the "Set New Password" screen.';
   }
 }
 
@@ -719,20 +732,15 @@ async function doSetNewPassword(){
   const pass=document.getElementById('auth-newpass').value;
   const conf=document.getElementById('auth-newpass-confirm').value;
   const errEl=document.getElementById('auth-newpass-err');
-  errEl.textContent='';
-  errEl.style.color='var(--red)';
+  errEl.textContent='';errEl.style.color='var(--red)';
   if(!pass||pass.length<8){errEl.textContent='Password must be at least 8 characters.';return;}
   if(pass!==conf){errEl.textContent='Passwords do not match.';return;}
-  errEl.style.color='var(--wg)';
-  errEl.textContent='Setting password…';
+  errEl.style.color='var(--wg)';errEl.textContent='Setting password…';
   const {error}=await sb.auth.updateUser({password:pass});
   if(error){
-    errEl.style.color='var(--red)';
-    errEl.textContent=error.message;
+    errEl.style.color='var(--red)';errEl.textContent=error.message;
   } else {
-    errEl.style.color='var(--green)';
-    errEl.textContent='✓ Password set! Signing you in…';
-    // Session is already active after updateUser — trigger onSignedIn
+    errEl.style.color='var(--green)';errEl.textContent='✓ Password set! Loading your CRM…';
     const {data:{session}}=await sb.auth.getSession();
     if(session) await onSignedIn(session.user);
   }
@@ -853,6 +861,27 @@ async function insertActivity(acctId,type,text){
 async function deleteActivity(actId){
   activities=activities.filter(x=>x.id!==actId);
   await sb.from('crm_activities').delete().eq('id',actId);
+}
+
+// Convert a legacy text-only location name into a real crm_locations record
+async function convertLegacyLocation(orgId, locName){
+  const org=accounts.find(a=>a.id===orgId);
+  if(!org) return;
+  const newL={
+    id:crypto.randomUUID(), org_id:orgId, name:locName,
+    city:'', tier:org.tier||'pro', stage:'new',
+    contact_name:'', phone:'', email:'', website:'', notes:'', followUp:''
+  };
+  setSyncState('syncing');
+  const {error}=await sb.from('crm_locations').insert({id:newL.id,...locToDb(newL)});
+  if(error){setSyncState('error');console.error('convertLoc:',error);return;}
+  setSyncState('ok');
+  locations.push(newL);
+  // Remove from legacy loc_list
+  org.locList=(org.locList||[]).filter(n=>n!==locName);
+  await saveAcct(org);
+  renderDetail(orgId);
+  updateSidebar();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1115,15 +1144,38 @@ function renderDetail(id){
   const orgLocs=locations.filter(l=>l.org_id===id);
   const orgActs=activities.filter(x=>x.account_id===id);
 
-  const locRows=orgLocs.length?orgLocs.map((l,i)=>{
-    const lsi=si(l.stage);
-    return `<div class="loc-row" onclick="goToLoc('${l.id}')">
-      <span class="loc-num">${i+1}</span>
-      <div style="flex:1"><div class="loc-name">${l.name}</div><div class="loc-meta">${l.city||''}${l.city?' · ':''}${lsi.label}</div></div>
-      <span class="loc-meta">${fmt(locMRR(l))}/mo</span>
-      <button class="loc-open" onclick="event.stopPropagation();goToLoc('${l.id}')">Open →</button>
-    </div>`;
-  }).join(''):(a.locList||[]).length?(a.locList||[]).map((ln,i)=>`<div class="loc-row"><span class="loc-num">${i+1}</span><div class="loc-name">${ln}</div></div>`).join(''):'<div class="act-empty">No locations added yet.</div>';
+  // Real location records — fully clickable
+  let locRows='';
+  if(orgLocs.length){
+    locRows=orgLocs.map((l,i)=>{
+      const lsi=si(l.stage);
+      return `<div class="loc-row" onclick="goToLoc('${l.id}')">
+        <span class="loc-num">${i+1}</span>
+        <div style="flex:1">
+          <div class="loc-name">${l.name}</div>
+          <div class="loc-meta">${l.city||'No city'}${l.city?' · ':''}${lsi.label}</div>
+        </div>
+        <span class="loc-meta" style="margin-right:0.4rem">${fmt(locMRR(l))}/mo</span>
+        <button class="loc-open" onclick="event.stopPropagation();goToLoc('${l.id}')">Open →</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Legacy text-only entries with convert button
+  const legacyNames=(a.locList||[]).filter(ln=>ln&&!orgLocs.find(l=>l.name===ln));
+  if(legacyNames.length){
+    locRows+=legacyNames.map((ln,i)=>`
+      <div class="loc-row" style="cursor:default">
+        <span class="loc-num">${orgLocs.length+i+1}</span>
+        <div style="flex:1">
+          <div class="loc-name" style="color:var(--wg)">${ln}</div>
+          <div class="loc-meta" style="color:var(--amber)">⚠ Text only — no detail screen yet</div>
+        </div>
+        <button class="loc-convert" onclick="convertLegacyLocation('${id}','${ln.replace(/'/g,"\\'")}')">Convert →</button>
+      </div>`).join('');
+  }
+
+  if(!locRows) locRows='<div class="act-empty">No locations added yet. Use "+ Location" above.</div>';
 
   const actEntries=orgActs.length?orgActs.map(act=>`<div class="act-entry">
     <span class="ae-type ${TYPE_CLS[act.type]||'ae-note'}">${TYPE_LABEL[act.type]||'Note'}</span>
@@ -1163,7 +1215,7 @@ function renderDetail(id){
       </div>
       <div class="dv-panel" style="margin-bottom:0">
         <div class="dvp-hdr"><span class="dvp-title">Locations</span><button class="loc-open" onclick="openAddLocModal('${id}')">+ Add</button></div>
-        <div class="dvp-body" style="padding:0.4rem 0.9rem">${locRows}</div>
+        <div style="padding:0">${locRows}</div>
       </div>
     </div>
 
